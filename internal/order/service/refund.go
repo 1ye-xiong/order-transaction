@@ -62,12 +62,17 @@ func (s *Service) ApplyRefund(ctx context.Context, cmd dto.ApplyRefundCommand) (
 		return dto.FromOrder(order), nil
 	}
 	now := time.Now().UTC()
-	changed, err := s.repo.Transition(ctx, cmd.OrderNo, entity.StatusPaid, entity.StatusRefundRequested, nil, now)
+	changed, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: cmd.OrderNo, Type: entity.RecordTypeRefund, Operator: cmd.BuyerID, Detail: "退款申请状态变更：" + cmd.Reason}, func(r entity.Repository) (bool, error) {
+		return r.Transition(ctx, cmd.OrderNo, entity.StatusPaid, entity.StatusRefundRequested, nil, now)
+	})
 	if err != nil {
 		return nil, err
 	}
 	if !changed {
-		order, _ = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+		order, err = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+		if err != nil {
+			return nil, err
+		}
 		return nil, fmt.Errorf("order not refundable in status %s", order.Status)
 	}
 	err = s.repo.CreateRefundRequest(ctx, &entity.RefundRequest{
@@ -78,17 +83,18 @@ func (s *Service) ApplyRefund(ctx context.Context, cmd dto.ApplyRefundCommand) (
 		CreatedAt: now,
 	})
 	if err != nil {
-		_, rollbackErr := s.repo.Transition(ctx, cmd.OrderNo, entity.StatusRefundRequested, entity.StatusPaid, nil, now)
+		_, rollbackErr := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: cmd.OrderNo, Type: entity.RecordTypeRefund, Operator: cmd.BuyerID, Detail: "退款申请状态变更：" + cmd.Reason}, func(r entity.Repository) (bool, error) {
+			return r.Transition(ctx, cmd.OrderNo, entity.StatusRefundRequested, entity.StatusPaid, nil, now)
+		})
 		if rollbackErr != nil {
 			return nil, fmt.Errorf("save refund: %v; rollback: %w", err, rollbackErr)
 		}
 		return nil, err
 	}
-	_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-		OrderNo: cmd.OrderNo, Type: entity.RecordTypeRefund, Operator: cmd.BuyerID,
-		Detail: "买家申请售前退款，发货暂停：" + cmd.Reason,
-	})
-	order, _ = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+	order, err = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+	if err != nil {
+		return nil, err
+	}
 	return dto.FromOrder(order), nil
 }
 
@@ -140,14 +146,15 @@ func (s *Service) ReviewRefund(ctx context.Context, cmd dto.ReviewRefundCommand)
 		if err := s.repo.UpdateRefundRequest(ctx, req); err != nil {
 			return nil, err
 		}
-		if _, err := s.repo.Transition(ctx, req.OrderNo, entity.StatusRefundRequested, entity.StatusPaid, nil, now); err != nil {
+		if _, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: req.OrderNo, Type: entity.RecordTypeRefund, Operator: cmd.ReviewerID, Detail: "退款审核状态变更：" + cmd.Reason}, func(r entity.Repository) (bool, error) {
+			return r.Transition(ctx, req.OrderNo, entity.StatusRefundRequested, entity.StatusPaid, nil, now)
+		}); err != nil {
 			return nil, err
 		}
-		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-			OrderNo: req.OrderNo, Type: entity.RecordTypeRefund, Operator: cmd.ReviewerID,
-			Detail: "客服拒绝退款：" + cmd.Reason,
-		})
-		order, _ = s.repo.FindByOrderNo(ctx, req.OrderNo)
+		order, err = s.repo.FindByOrderNo(ctx, req.OrderNo)
+		if err != nil {
+			return nil, err
+		}
 		return dto.FromOrder(order), nil
 	}
 	// 同意：先落审核记录，再走渠道退款
@@ -204,24 +211,31 @@ func (s *Service) executeRefund(ctx context.Context, orderNo string, refundNo st
 	}
 	now := time.Now().UTC()
 	if success {
-		changed, err := s.repo.Transition(ctx, orderNo, entity.StatusRefundRequested, entity.StatusRefunded, func(o *entity.Order) {
-			refundedAt := now
-			o.RefundedAt = &refundedAt
-		}, now)
+		changed, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: orderNo, Type: entity.RecordTypeRefund, Operator: operatorID, Detail: fmt.Sprintf("%s refund_no=%s success=%t amount=%d result=%s", action, refundNo, success, order.AmountCents(), message)}, func(r entity.Repository) (bool, error) {
+			return r.Transition(ctx, orderNo, entity.StatusRefundRequested, entity.StatusRefunded, func(o *entity.Order) {
+				refundedAt := now
+				o.RefundedAt = &refundedAt
+			}, now)
+		})
 		if err != nil {
 			return nil, err
 		}
 		if !changed {
 			// 状态可能已是 REFUND_FAILED（重试退款），从 REFUND_FAILED 转移
-			changed, err = s.repo.Transition(ctx, orderNo, entity.StatusRefundFailed, entity.StatusRefunded, func(o *entity.Order) {
-				refundedAt := now
-				o.RefundedAt = &refundedAt
-			}, now)
+			changed, err = s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: orderNo, Type: entity.RecordTypeRefund, Operator: operatorID, Detail: fmt.Sprintf("%s refund_no=%s success=%t amount=%d result=%s", action, refundNo, success, order.AmountCents(), message)}, func(r entity.Repository) (bool, error) {
+				return r.Transition(ctx, orderNo, entity.StatusRefundFailed, entity.StatusRefunded, func(o *entity.Order) {
+					refundedAt := now
+					o.RefundedAt = &refundedAt
+				}, now)
+			})
 			if err != nil {
 				return nil, err
 			}
 			if !changed {
-				order, _ = s.repo.FindByOrderNo(ctx, orderNo)
+				order, err = s.repo.FindByOrderNo(ctx, orderNo)
+				if err != nil {
+					return nil, err
+				}
 				return dto.FromOrder(order), nil
 			}
 		}
@@ -229,24 +243,20 @@ func (s *Service) executeRefund(ctx context.Context, orderNo string, refundNo st
 		if err := s.syncStock(ctx, orderNo, "restore"); err != nil {
 			return nil, err
 		}
-		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-			OrderNo: orderNo, Type: entity.RecordTypeRefund, Operator: operatorID,
-			Detail: fmt.Sprintf("退款成功 refund_no=%s amount=%d，恢复可售数量", refundNo, order.AmountCents()),
-		})
 	} else {
-		changed, err := s.repo.Transition(ctx, orderNo, entity.StatusRefundRequested, entity.StatusRefundFailed, func(o *entity.Order) {
-			o.RefundFailReason = message
-		}, now)
+		_, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: orderNo, Type: entity.RecordTypeRefund, Operator: operatorID, Detail: fmt.Sprintf("%s refund_no=%s success=%t amount=%d result=%s", action, refundNo, success, order.AmountCents(), message)}, func(r entity.Repository) (bool, error) {
+			return r.Transition(ctx, orderNo, entity.StatusRefundRequested, entity.StatusRefundFailed, func(o *entity.Order) {
+				o.RefundFailReason = message
+			}, now)
+		})
 		if err != nil {
 			return nil, err
 		}
-		if changed {
-			_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-				OrderNo: orderNo, Type: entity.RecordTypeRefund, Operator: operatorID,
-				Detail: fmt.Sprintf("退款失败 refund_no=%s：%s，等待客服重试", refundNo, message),
-			})
-		}
+
 	}
-	order, _ = s.repo.FindByOrderNo(ctx, orderNo)
+	order, err = s.repo.FindByOrderNo(ctx, orderNo)
+	if err != nil {
+		return nil, err
+	}
 	return dto.FromOrder(order), nil
 }

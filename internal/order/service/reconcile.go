@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -48,6 +49,7 @@ func (s *Service) syncStock(ctx context.Context, orderNo, action string) error {
 // Terminal order states are durable retry intents. Scan after startup as well as
 // periodically; no in-memory queue is required to recover a failed stock RPC.
 func (s *Service) reconcileStock(ctx context.Context) error {
+	var failures []error
 	for _, task := range []struct{ state, action string }{
 		{entity.StatusCancelled, "release"}, {entity.StatusClosedTimeout, "release"},
 		{entity.StatusPaid, "confirm"}, {entity.StatusShipped, "confirm"},
@@ -56,13 +58,14 @@ func (s *Service) reconcileStock(ctx context.Context) error {
 	} {
 		orders, err := s.repo.ListByStatus(ctx, task.state)
 		if err != nil {
-			return err
+			failures = append(failures, fmt.Errorf("list %s: %w", task.state, err))
+			continue
 		}
 		for _, order := range orders {
 			if err := s.syncStock(ctx, order.OrderNo, task.action); err != nil {
-				return err
+				failures = append(failures, fmt.Errorf("stock %s %s: %w", order.OrderNo, task.action, err))
 			}
 		}
 	}
-	return nil
+	return errors.Join(failures...)
 }

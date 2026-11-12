@@ -1,0 +1,2 @@
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	0.332s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/repo	0.494s

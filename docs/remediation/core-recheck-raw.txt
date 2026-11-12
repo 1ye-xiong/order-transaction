@@ -1,0 +1,76 @@
+Command: go test ./internal/order/... ./internal/product/... ./internal/payment/... ./internal/warehouse/... -coverprofile=docs/remediation/core-recheck.out -count=1
+Exit: 0
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/dto	3.942s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/entity	3.280s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/handler	1.102s	coverage: 93.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/model	1.415s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/repo	0.999s	coverage: 89.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	0.730s	coverage: 85.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/dto	1.444s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/entity	1.466s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/handler	1.046s	coverage: 86.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/model	1.419s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/repo	5.290s	coverage: 85.5% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/service	0.683s	coverage: 87.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/entity	1.411s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/handler	0.686s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/model	1.452s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/repo	0.733s	coverage: 91.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/service	1.771s	coverage: 86.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/handler	0.787s	coverage: 92.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/service	1.423s	coverage: 100.0% of statements
+Command: go test ./internal/order/service -run TestAudit(NonSuccessNotifyNeverMarksPaid|RefundReviewRequiresMeaningfulReason|CancelRetriesReleaseAfterServiceRestart)$ -count=1 -v
+Exit: 0
+=== RUN   TestAuditNonSuccessNotifyNeverMarksPaid
+=== RUN   TestAuditNonSuccessNotifyNeverMarksPaid/PENDING
+=== RUN   TestAuditNonSuccessNotifyNeverMarksPaid/PROCESSING
+=== RUN   TestAuditNonSuccessNotifyNeverMarksPaid/#00
+=== RUN   TestAuditNonSuccessNotifyNeverMarksPaid/success
+=== RUN   TestAuditNonSuccessNotifyNeverMarksPaid/CANCELLED
+--- PASS: TestAuditNonSuccessNotifyNeverMarksPaid (0.00s)
+    --- PASS: TestAuditNonSuccessNotifyNeverMarksPaid/PENDING (0.00s)
+    --- PASS: TestAuditNonSuccessNotifyNeverMarksPaid/PROCESSING (0.00s)
+    --- PASS: TestAuditNonSuccessNotifyNeverMarksPaid/#00 (0.00s)
+    --- PASS: TestAuditNonSuccessNotifyNeverMarksPaid/success (0.00s)
+    --- PASS: TestAuditNonSuccessNotifyNeverMarksPaid/CANCELLED (0.00s)
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/approve
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/_approve
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/__approve
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/_approve#01
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/reject
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/_reject
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/__reject
+=== RUN   TestAuditRefundReviewRequiresMeaningfulReason/_reject#01
+--- PASS: TestAuditRefundReviewRequiresMeaningfulReason (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/approve (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/_approve (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/__approve (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/_approve#01 (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/reject (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/_reject (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/__reject (0.00s)
+    --- PASS: TestAuditRefundReviewRequiresMeaningfulReason/_reject#01 (0.00s)
+=== RUN   TestAuditCancelRetriesReleaseAfterServiceRestart
+--- PASS: TestAuditCancelRetriesReleaseAfterServiceRestart (0.00s)
+PASS
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	0.364s
+
+Algorithm Hash                                                             Path
+--------- ----                                                             ----
+SHA256    23E1DE443C9C5A1720F8526D4A1CBFB7EF57F712B21D6E0B2CB1F5F5DD8ACE37 C:\Users\35795\Desktop\order-transaction\internal\order\service\audit_atomic_test.go
+SHA256    07294EB01CC80221CAA22AECFE3C804FD10E4E801E6193D8CFDF088942E7C712 C:\Users\35795\Desktop\order-transaction\internal\order\service\audit_regression_test.go
+SHA256    2ED13E078B89931027C3B1A2DDD9AD0E6A1BA22AB9729E7AF48260DB22CE4E0C C:\Users\35795\Desktop\order-transaction\internal\order\service\exception.go
+SHA256    53C1087D86F03D051FB3792D05B6A1467AFEDF3AB60F207440CC20DC547AAB69 C:\Users\35795\Desktop\order-transaction\internal\order\service\fakes_test.go
+SHA256    55C905E5F446405F76AB5E16A6F7BA1CD11516F844BFCCABFCA5B96A644CB751 C:\Users\35795\Desktop\order-transaction\internal\order\service\notify_test.go
+SHA256    2DA00F5C35A443254EF893B5DB268402263C83900DB5BA23E99076AA86A9BC3A C:\Users\35795\Desktop\order-transaction\internal\order\service\notify.go
+SHA256    297A5538AAB96A59B9E653D956EEEB1CFF322EC05756A5FE342DC8A60C0D2AC2 C:\Users\35795\Desktop\order-transaction\internal\order\service\reconcile.go
+SHA256    28ABD6D95CBB93E092B6E882662539F77D8818F78FA1F3A2E7EE20CCDE0ED89E C:\Users\35795\Desktop\order-transaction\internal\order\service\refund.go
+SHA256    D390D1EB8F6565B5E6C19F701B9669BEE6C4053745608390E46CB91C1AAEC5CD C:\Users\35795\Desktop\order-transaction\internal\order\service\service_more_test.go
+SHA256    1D647DF5D2FCDF583C4BA0BBA84BA874C09BCF0A7BFFA3EFEED4FDA4691236BA C:\Users\35795\Desktop\order-transaction\internal\order\service\service_test.go
+SHA256    373500F7ED390ACF53BA976E3547D57CD81ABC61B37F15C9317F0E94877C0004 C:\Users\35795\Desktop\order-transaction\internal\order\service\service.go
+SHA256    E0BB5884BA07E8079ED25B8642B7E940A4B59285ECEFD96C4988DB5BC959DC33 C:\Users\35795\Desktop\order-transaction\internal\order\service\ship.go
+SHA256    A02F5E173EE9C4ECA915BAA2A23161BF5DD7BEAB0798A629698543A1B08048DE C:\Users\35795\Desktop\order-transaction\internal\product\repo\gorm_repository.go
+SHA256    07DB1A2668D411DAD366DCE9692D05F89AA83F911DF70F56348516EE97F0E862 C:\Users\35795\Desktop\order-transaction\internal\payment\repo\gorm_repository.go
+
+

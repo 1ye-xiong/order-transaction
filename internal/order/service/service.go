@@ -74,7 +74,9 @@ func (s *Service) CreateOrder(ctx context.Context, cmd dto.CreateCommand) (*dto.
 		return nil, err
 	}
 	if err := s.repo.Create(ctx, order); err != nil {
-		_ = s.stock.Release(ctx, orderNo)
+		if releaseErr := s.stock.Release(ctx, orderNo); releaseErr != nil {
+			return nil, fmt.Errorf("save order: %v; release stock: %w", err, releaseErr)
+		}
 		return nil, err
 	}
 	return dto.FromOrder(order), nil
@@ -116,10 +118,13 @@ func (s *Service) CancelOrder(ctx context.Context, buyerID string, orderNo strin
 		if _, err := s.closeExpired(ctx, order.OrderNo, now); err != nil {
 			return nil, err
 		}
-		order, _ = s.repo.FindByOrderNo(ctx, orderNo)
+		order, err = s.repo.FindByOrderNo(ctx, orderNo)
+		if err != nil {
+			return nil, err
+		}
 		return dto.FromOrder(order), nil
 	}
-	changed, err := s.repo.CancelPending(ctx, orderNo, reason, now)
+	changed, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: orderNo, Type: entity.RecordTypeClose, Operator: buyerID, Detail: "买家取消订单：" + reason}, func(r entity.Repository) (bool, error) { return r.CancelPending(ctx, orderNo, reason, now) })
 	if err != nil {
 		return nil, err
 	}
@@ -127,11 +132,11 @@ func (s *Service) CancelOrder(ctx context.Context, buyerID string, orderNo strin
 		if err := s.syncStock(ctx, orderNo, "release"); err != nil {
 			return nil, err
 		}
-		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-			OrderNo: orderNo, Type: entity.RecordTypeClose, Operator: buyerID, Detail: "买家取消订单，释放库存占用",
-		})
 	}
-	order, _ = s.repo.FindByOrderNo(ctx, orderNo)
+	order, err = s.repo.FindByOrderNo(ctx, orderNo)
+	if err != nil {
+		return nil, err
+	}
 	return dto.FromOrder(order), nil
 }
 
@@ -147,7 +152,9 @@ func (s *Service) PayOrder(ctx context.Context, buyerID string, orderNo string) 
 	now := time.Now().UTC()
 	if !order.CanPay(now) {
 		if order.IsExpired(now) {
-			_, _ = s.closeExpired(ctx, orderNo, now)
+			if _, err := s.closeExpired(ctx, orderNo, now); err != nil {
+				return "", err
+			}
 			return "", fmt.Errorf("order closed: pay timeout")
 		}
 		return "", fmt.Errorf("order not payable in status %s", order.Status)
@@ -156,9 +163,11 @@ func (s *Service) PayOrder(ctx context.Context, buyerID string, orderNo string) 
 	if err != nil {
 		return "", err
 	}
-	_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
+	if err := s.repo.CreateRecord(ctx, &entity.OrderRecord{
 		OrderNo: orderNo, Type: entity.RecordTypePay, Operator: buyerID,
 		Detail: fmt.Sprintf("渠道受理支付 trade_no=%s amount=%d", tradeNo, order.AmountCents()),
-	})
+	}); err != nil {
+		return "", fmt.Errorf("channel accepted trade %s but audit save failed: %w", tradeNo, err)
+	}
 	return tradeNo, nil
 }

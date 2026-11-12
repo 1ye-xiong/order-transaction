@@ -18,3 +18,5 @@
 读取项目 trade-business-check v2：输入原检查报告、原题及订单/商品/支付/仓库生产代码，执行状态、幂等、金额、权限、库存补偿和并发核对；发现并修复报告缺陷，同时独立真实HTTP验收发现RPC名称、身份转发、SQLite锁三处额外问题。输出见 docs/remediation/REPORT.md、独立测试和HTTP验收原件。测试/验收上下文另读取 topic01-acceptance-check。整题验收仍不通过，整体覆盖率、正式发布和视频缺失；不声明原历史阶段已补齐。学生已要求按报告修复，尚未记录本轮逐项人工审核。
 
 2026-11-12 前端源码接入追加：重新读取AGENTS v2、developer入口及trade-business-check v2，按已授权修补范围接入买家/仓库/客服/运营真实接口，复核整数分、服务端身份、异步支付/退款状态。独立测试与验收各自读题运行，证据见docs/remediation/frontend-independent-tests.md、frontend-acceptance.md。发现分页、时区、构建与轮询问题后修正复测；无正式发布或学生人工审核证据，不补写早期历史。
+
+2026-11-12 用户清单再复核：实际重读AGENTS与trade-business-check，开发补关键状态与流水同事务、查询错误传播和库存补偿扫描公平性；测试/验收分别独立上下文复跑最终版本，原始记录在当前聊天及docs/remediation/followup-*。不把旧profile沿用为新代码达标，不把本机旧镜像当成本轮新部署，不补造历史Token、学生审核或视频。

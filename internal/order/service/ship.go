@@ -22,24 +22,28 @@ func (s *Service) ShipOrder(ctx context.Context, cmd dto.ShipCommand) (*dto.Orde
 		return nil, err
 	}
 	now := time.Now().UTC()
-	changed, err := s.repo.Transition(ctx, cmd.OrderNo, entity.StatusPaid, entity.StatusShipped, func(o *entity.Order) {
-		o.Carrier = cmd.Carrier
-		o.TrackingNo = cmd.TrackingNo
-		shippedAt := now
-		o.ShippedAt = &shippedAt
-	}, now)
+	changed, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: cmd.OrderNo, Type: entity.RecordTypeShip, Operator: cmd.Operator, Detail: fmt.Sprintf("发货登记 carrier=%s tracking_no=%s", cmd.Carrier, cmd.TrackingNo)}, func(r entity.Repository) (bool, error) {
+		return r.Transition(ctx, cmd.OrderNo, entity.StatusPaid, entity.StatusShipped, func(o *entity.Order) {
+			o.Carrier = cmd.Carrier
+			o.TrackingNo = cmd.TrackingNo
+			shippedAt := now
+			o.ShippedAt = &shippedAt
+		}, now)
+	})
 	if err != nil {
 		return nil, err
 	}
 	if !changed {
-		order, _ = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+		order, err = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+		if err != nil {
+			return nil, err
+		}
 		return nil, shipBlockedError(order.Status)
 	}
-	_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-		OrderNo: cmd.OrderNo, Type: entity.RecordTypeShip, Operator: cmd.Operator,
-		Detail: fmt.Sprintf("发货登记 carrier=%s tracking_no=%s", cmd.Carrier, cmd.TrackingNo),
-	})
-	order, _ = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+	order, err = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+	if err != nil {
+		return nil, err
+	}
 	return dto.FromOrder(order), nil
 }
 
@@ -86,7 +90,7 @@ func (s *Service) CloseExpiredOrders(ctx context.Context) (int, error) {
 }
 
 func (s *Service) closeExpired(ctx context.Context, orderNo string, now time.Time) (bool, error) {
-	changed, err := s.repo.CloseIfExpired(ctx, orderNo, now)
+	changed, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: orderNo, Type: entity.RecordTypeClose, Operator: "system", Detail: "待付款超时关闭"}, func(r entity.Repository) (bool, error) { return r.CloseIfExpired(ctx, orderNo, now) })
 	if err != nil || !changed {
 		return false, err
 	}
@@ -94,9 +98,6 @@ func (s *Service) closeExpired(ctx context.Context, orderNo string, now time.Tim
 	if err := s.syncStock(ctx, orderNo, "release"); err != nil {
 		return true, err
 	}
-	_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-		OrderNo: orderNo, Type: entity.RecordTypeClose, Operator: "system", Detail: "待付款超时关闭，释放库存占用",
-	})
 	return true, nil
 }
 

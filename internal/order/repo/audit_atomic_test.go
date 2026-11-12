@@ -158,3 +158,41 @@ func TestAuditCrossTablePaymentFacts(t *testing.T) {
 		t.Fatalf("must preserve old detail: %+v", got)
 	}
 }
+
+func TestAuditWithRecordAtomicRollbackAndNoop(t *testing.T) {
+	r := NewGormRepository(newTestDB(t))
+	ctx := context.Background()
+	o := newOrder("with-record")
+	if err := r.Create(ctx, o); err != nil {
+		t.Fatal(err)
+	}
+	rec := &entity.OrderRecord{OrderNo: o.OrderNo, Type: entity.RecordTypeClose, Operator: "buyer", Detail: "cancel"}
+	op := func(repo entity.Repository) (bool, error) {
+		return repo.CancelPending(ctx, o.OrderNo, "reason", time.Now())
+	}
+	if ok, err := r.WithAuditRecord(ctx, rec, op); err != nil || !ok {
+		t.Fatalf("write %v %v", ok, err)
+	}
+	if ok, err := r.WithAuditRecord(ctx, rec, op); err != nil || ok {
+		t.Fatalf("noop %v %v", ok, err)
+	}
+	if _, err := r.WithAuditRecord(ctx, rec, func(entity.Repository) (bool, error) { return false, entity.ErrInvalidState }); err != entity.ErrInvalidState {
+		t.Fatal(err)
+	}
+	records, err := r.ListRecords(ctx, o.OrderNo)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("records %d %v", len(records), err)
+	}
+	if err := r.db.Exec("DROP TABLE order_records").Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.WithAuditRecord(ctx, rec, func(repo entity.Repository) (bool, error) {
+		return repo.Transition(ctx, o.OrderNo, entity.StatusCancelled, entity.StatusPaid, nil, time.Now())
+	}); err == nil {
+		t.Fatal("audit failure must abort state change")
+	}
+	saved, _ := r.FindByOrderNo(ctx, o.OrderNo)
+	if saved.Status != entity.StatusCancelled {
+		t.Fatal("state failed to rollback")
+	}
+}

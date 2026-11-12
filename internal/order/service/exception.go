@@ -46,13 +46,14 @@ func (s *Service) RefundPayException(ctx context.Context, operatorID string, exc
 		ex.Detail = ex.Detail + "；退款失败 refund_no=" + refundNo + "：" + message
 	}
 	ex.Detail = fmt.Sprintf("%s（操作人 %s）", ex.Detail, operatorID)
-	if err := s.repo.UpdatePayException(ctx, ex); err != nil {
+	_, err = s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: ex.OrderNo, Type: entity.RecordTypeException, Operator: operatorID, Detail: fmt.Sprintf("迟到支付退款 success=%t refund_no=%s：%s", success, refundNo, message)}, func(r entity.Repository) (bool, error) {
+		if err := r.UpdatePayException(ctx, ex); err != nil {
+			return false, err
+		}
+		return true, nil
+	})
+	if err != nil {
 		return nil, false, "", err
 	}
-	_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-		OrderNo: ex.OrderNo, Type: entity.RecordTypeException, Operator: operatorID,
-		Detail: fmt.Sprintf("迟到支付退款%s refund_no=%s：%s",
-			map[bool]string{true: "成功", false: "失败"}[success], refundNo, message),
-	})
 	return ex, success, message, nil
 }

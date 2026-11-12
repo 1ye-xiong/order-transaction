@@ -13,23 +13,31 @@ func (s *Service) HandlePaymentNotify(ctx context.Context, req NotifyInput) (boo
 	now := time.Now().UTC()
 	// 1. 验签
 	if !s.verifySignature(req) {
-		_, _ = s.recordNotifyAnomaly(ctx, req, "signature_invalid", "支付通知验签失败", now)
+		if _, err := s.recordNotifyAnomaly(ctx, req, "signature_invalid", "支付通知验签失败", now); err != nil {
+			return false, err.Error()
+		}
 		return false, "signature invalid"
 	}
 	if req.Status != "SUCCESS" && req.Status != "FAILED" || req.ChannelTradeNo == "" {
-		_, _ = s.recordNotifyAnomaly(ctx, req, "invalid_status", "通知状态或交易号非法", now)
+		if _, err := s.recordNotifyAnomaly(ctx, req, "invalid_status", "通知状态或交易号非法", now); err != nil {
+			return false, err.Error()
+		}
 		return false, "invalid payment status"
 	}
 	// 2. 匹配订单
 	order, err := s.repo.FindByOrderNo(ctx, req.OrderNo)
 	if err != nil {
-		_, _ = s.recordNotifyAnomaly(ctx, req, "order_unknown", "支付通知无法匹配订单", now)
+		if _, err := s.recordNotifyAnomaly(ctx, req, "order_unknown", "支付通知无法匹配订单", now); err != nil {
+			return false, err.Error()
+		}
 		return false, "order unknown"
 	}
 	// 3. 匹配金额
 	if req.AmountCents != order.AmountCents() {
-		_, _ = s.recordNotifyAnomaly(ctx, req, "amount_mismatch",
-			fmt.Sprintf("通知金额 %d 与订单金额 %d 不符", req.AmountCents, order.AmountCents()), now)
+		if _, err := s.recordNotifyAnomaly(ctx, req, "amount_mismatch",
+			fmt.Sprintf("通知金额 %d 与订单金额 %d 不符", req.AmountCents, order.AmountCents()), now); err != nil {
+			return false, err.Error()
+		}
 		return false, "amount mismatch"
 	}
 	// 4. 重复通知幂等：同一渠道交易号已归属本订单时不重复记款
@@ -51,27 +59,29 @@ func (s *Service) HandlePaymentNotify(ctx context.Context, req NotifyInput) (boo
 	}
 	// 5. 支付失败通知：仅记流水，不改状态
 	if req.Status == "FAILED" {
-		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
+		if err := s.repo.CreateRecord(ctx, &entity.OrderRecord{
 			OrderNo: order.OrderNo, Type: entity.RecordTypePay, Operator: "channel",
 			Detail: fmt.Sprintf("渠道通知支付失败 trade_no=%s", req.ChannelTradeNo),
-		})
+		}); err != nil {
+			return false, err.Error()
+		}
 		return true, "failed notify recorded"
 	}
 	// 6. 有效期内支付成功：PENDING_PAYMENT -> PAID（条件更新含有效期判断，服务端时间）
 	if order.Status == entity.StatusPendingPayment {
-		changed, err := s.repo.MarkPaid(ctx, order.OrderNo, req.ChannelTradeNo, now)
+		changed, err := s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: order.OrderNo, Type: entity.RecordTypePay, Operator: "channel", Detail: fmt.Sprintf("支付成功 trade_no=%s amount=%d", req.ChannelTradeNo, req.AmountCents)}, func(r entity.Repository) (bool, error) {
+			return r.MarkPaid(ctx, order.OrderNo, req.ChannelTradeNo, now)
+		})
 		if err != nil {
-			_, _ = s.recordNotifyAnomaly(ctx, req, "trade_no_conflict", "渠道交易号已归属其他订单", now)
+			if _, err := s.recordNotifyAnomaly(ctx, req, "trade_no_conflict", "渠道交易号已归属其他订单", now); err != nil {
+				return false, err.Error()
+			}
 			return false, "trade no conflict"
 		}
 		if changed {
 			if err := s.syncStock(ctx, order.OrderNo, "confirm"); err != nil {
 				return false, err.Error()
 			}
-			_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-				OrderNo: order.OrderNo, Type: entity.RecordTypePay, Operator: "channel",
-				Detail: fmt.Sprintf("支付成功 trade_no=%s amount=%d", req.ChannelTradeNo, req.AmountCents),
-			})
 			return true, "paid"
 		}
 	}
@@ -81,7 +91,10 @@ func (s *Service) HandlePaymentNotify(ctx context.Context, req NotifyInput) (boo
 		if _, err := s.closeExpired(ctx, order.OrderNo, now); err != nil {
 			return false, err.Error()
 		}
-		order, _ = s.repo.FindByOrderNo(ctx, order.OrderNo)
+		order, err = s.repo.FindByOrderNo(ctx, order.OrderNo)
+		if err != nil {
+			return false, err.Error()
+		}
 	}
 	if order.Status == entity.StatusCancelled || order.Status == entity.StatusClosedTimeout {
 		if _, err := s.recordNotifyAnomaly(ctx, req, "late_payment", fmt.Sprintf("订单 %s 后收到支付成功通知，等待客服退款", statusText(order.Status)), now); err != nil {
@@ -90,8 +103,10 @@ func (s *Service) HandlePaymentNotify(ctx context.Context, req NotifyInput) (boo
 		return true, "late payment recorded"
 	}
 	// 8. 其他状态收到成功通知：异常记录，不改状态
-	_, _ = s.recordNotifyAnomaly(ctx, req, "invalid_state",
-		fmt.Sprintf("订单状态 %s 不应收支付成功通知", order.Status), now)
+	if _, err := s.recordNotifyAnomaly(ctx, req, "invalid_state",
+		fmt.Sprintf("订单状态 %s 不应收支付成功通知", order.Status), now); err != nil {
+		return false, err.Error()
+	}
 	return false, "invalid state"
 }
 
@@ -125,16 +140,12 @@ func (s *Service) recordNotifyAnomaly(ctx context.Context, req NotifyInput, reas
 		Status:         entity.ExceptionPending,
 		Detail:         detail,
 	}
-	if err := s.repo.CreatePayException(ctx, ex); err != nil {
-		return false, err
-	}
-	if req.OrderNo != "" {
-		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
-			OrderNo: req.OrderNo, Type: entity.RecordTypeException, Operator: "channel",
-			Detail: fmt.Sprintf("异常支付 %s：trade_no=%s %s", reason, req.ChannelTradeNo, detail),
-		})
-	}
-	return true, nil
+	return s.changeWithRecord(ctx, &entity.OrderRecord{OrderNo: req.OrderNo, Type: entity.RecordTypeException, Operator: "channel", Detail: fmt.Sprintf("异常支付 %s：trade_no=%s %s", reason, req.ChannelTradeNo, detail)}, func(r entity.Repository) (bool, error) {
+		if err := r.CreatePayException(ctx, ex); err != nil {
+			return false, err
+		}
+		return true, nil
+	})
 }
 
 func statusText(status string) string {

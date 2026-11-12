@@ -18,7 +18,7 @@ class Harness:
         self.base='http://127.0.0.1:'+str(self.ports['gateway'])+'/api/v1'
     def prepare(self):
         (self.work/'configs').mkdir(); (self.work/'bin').mkdir(); (self.work/'data').mkdir()
-        shutil.copytree(ROOT/'web',self.work/'web')
+        shutil.copytree(ROOT/'web',self.work/'web',ignore=shutil.ignore_patterns('node_modules','.git'))
         cfg=(ROOT/'configs/config.yaml').read_text(encoding='utf-8').replace('host: 0.0.0.0','host: 127.0.0.1').replace('port: 8080','port: '+str(self.ports['gateway'])).replace('order_pay_timeout_seconds: 600','order_pay_timeout_seconds: 3')
         for name,old in [('user',9001),('note',9002),('order',9100),('product',9101),('payment',9103),('warehouse',9104)]:
             cfg=cfg.replace('port: '+str(old),'port: '+str(self.ports[name])).replace('127.0.0.1:'+str(old),'127.0.0.1:'+str(self.ports[name]))

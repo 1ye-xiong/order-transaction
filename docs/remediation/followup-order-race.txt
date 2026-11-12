@@ -1,0 +1,6 @@
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/dto	1.104s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/entity	1.064s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/handler	1.591s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/model	1.026s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/repo	2.846s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	1.597s

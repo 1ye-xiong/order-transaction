@@ -581,6 +581,9 @@ func (r *GormRepository) ApplyRefundAtomic(ctx context.Context, orderNo, buyerID
 		if err := tx.Create(&dbmodel.RefundRequestModel{OrderNo: orderNo, BuyerID: buyerID, Reason: reason, Status: entity.RefundPending, CreatedAt: now.UTC()}).Error; err != nil {
 			return err
 		}
+		if err := (&GormRepository{db: tx}).CreateRecord(ctx, &entity.OrderRecord{OrderNo: orderNo, Type: entity.RecordTypeRefund, Operator: buyerID, Detail: "买家申请售前退款：" + reason}); err != nil {
+			return err
+		}
 		changed = true
 		return nil
 	})
@@ -613,8 +616,31 @@ func (r *GormRepository) ReviewRefundAtomic(ctx context.Context, req *entity.Ref
 		if state.RowsAffected != 1 {
 			return entity.ErrInvalidState
 		}
+		if err := (&GormRepository{db: tx}).CreateRecord(ctx, &entity.OrderRecord{OrderNo: req.OrderNo, Type: entity.RecordTypeRefund, Operator: req.ReviewerID, Detail: "客服审核退款 " + status + "：" + req.ReviewReason}); err != nil {
+			return err
+		}
 		changed = true
 		return nil
 	})
 	return changed, err
+}
+
+// WithAuditRecord makes a successful state change and its audit entry indivisible.
+func (r *GormRepository) WithAuditRecord(ctx context.Context, record *entity.OrderRecord, operation func(entity.Repository) (bool, error)) (bool, error) {
+	var changed bool
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var err error
+		changed, err = operation(&GormRepository{db: tx})
+		if err != nil {
+			return err
+		}
+		if !changed {
+			return nil
+		}
+		return (&GormRepository{db: tx}).CreateRecord(ctx, record)
+	})
+	if err != nil {
+		return false, err
+	}
+	return changed, nil
 }

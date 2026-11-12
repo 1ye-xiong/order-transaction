@@ -1,0 +1,15 @@
+Acceptance time 2026-11-12T18:35:56.157859+08:00
+Source HEAD 8db219cce237c72cc208a40f812a5e42ed1e9b32 plus uncommitted worktree changes (not an exact commit release).
+Built six services. Isolated runtime: C:\Users\35795\AppData\Local\Temp\trade-acceptance-d36nat9u
+All six services started; six teaching accounts authenticated.
+Seed: exactly two products; three buyers and three staff authenticated. Teaching expiry explicitly shortened to 3 seconds.
+PASS S1: real HTTP create/pay (3 repeated notifications)/ship/buyer tracking/ops stock and records. order=ORD1794479807824060a287d64
+PASS S2: 20 HTTP requests / 5 successful / 15 rejected; cancel 2 twice, then 2 other purchases; no oversell.
+PASS S3: paid/refund apply/shipping blocked/blank review rejected/first channel refund fails/retry succeeds/5 stock restored.
+PASS S4: timeout before 3 delayed success notifications; exception refunded twice requests, only 1 channel success; stock 5; summary paid=30000/refunded=20000.
+PASS channel branches: explicit FAILED leaves order unpaid; no_notify times out server-side and releases stock.
+PASS S5: simultaneous refund/ship -> REFUND_REQUESTED; other buyer GET/cancel denied; staff operation and channel auth boundaries denied.
+All six services started; six teaching accounts authenticated.
+PASS restart: all six processes stopped/restarted against same file; shipment, amounts and product count persisted; no duplicate seeding.
+Runtime logs retained at C:\Users\35795\AppData\Local\Temp\trade-acceptance-d36nat9u
+RESULT PASS (HTTP integration scope only)

@@ -81,6 +81,8 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main'
     environment: production
+    env:
+      ORDER_HTTP_PORT: "18080"
     steps:
       - uses: actions/checkout@v4
       - name: 启动部署栈
@@ -88,12 +90,12 @@ jobs:
       - name: 健康检查
         run: |
           for i in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8080/healthz > /dev/null; then echo healthy; exit 0; fi
+            if curl -fsS http://127.0.0.1:18080/healthz > /dev/null; then echo healthy; exit 0; fi
             sleep 2
           done
           echo 健康检查超时; exit 1
       - name: 冒烟测试
-        run: bash deploy/smoke.sh
+        run: BASE=http://127.0.0.1:18080/api/v1 bash deploy/smoke.sh
       - name: 撤销临时预览（保留数据卷）
         if: always()
         run: docker compose -f deploy/docker-compose.yml down
