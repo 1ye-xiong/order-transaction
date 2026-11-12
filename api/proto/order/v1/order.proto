@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/BwCloudWeGo/bw-cli/api/gen/order/v1;orderv1";
+
+// OrderService is the gRPC boundary for the order business service.
+// The default CRUD contract is ready to call. Extend messages and RPCs as business grows.
+service OrderService {
+  // 买家
+  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (OrderResponse);
+  rpc ListMyOrders(ListMyOrdersRequest) returns (ListOrdersResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (OrderResponse);
+  rpc PayOrder(PayOrderRequest) returns (PayOrderResponse);
+  rpc ApplyRefund(ApplyRefundRequest) returns (OrderResponse);
+  // 模拟支付渠道回调
+  rpc HandlePaymentNotify(HandlePaymentNotifyRequest) returns (HandlePaymentNotifyResponse);
+  // 仓库
+  rpc ListShippableOrders(ListShippableOrdersRequest) returns (ListOrdersResponse);
+  rpc ShipOrder(ShipOrderRequest) returns (OrderResponse);
+  // 客服
+  rpc ListRefundRequests(ListRefundRequestsRequest) returns (ListRefundRequestsResponse);
+  rpc ReviewRefund(ReviewRefundRequest) returns (OrderResponse);
+  rpc RetryRefund(RetryRefundRequest) returns (OrderResponse);
+  rpc ListPayExceptions(ListPayExceptionsRequest) returns (ListPayExceptionsResponse);
+  rpc RefundPayException(RefundPayExceptionRequest) returns (PayExceptionResponse);
+  // 运营
+  rpc OpsSummary(OpsSummaryRequest) returns (OpsSummaryResponse);
+  rpc ListOrderRecords(ListOrderRecordsRequest) returns (ListOrderRecordsResponse);
+}
+
+// 买家下单：每单一种商品，数量 1~2；商品与价格在订单创建时固化。
+message CreateOrderRequest {
+  string product_id = 1;
+  int64 quantity = 2;
+}
+
+message GetOrderRequest {
+  string order_no = 1;
+}
+
+message ListMyOrdersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message CancelOrderRequest {
+  string order_no = 1;
+}
+
+message PayOrderRequest {
+  string order_no = 1;
+}
+
+message PayOrderResponse {
+  string order_no = 1;
+  string channel_trade_no = 2;
+  bool accepted = 3;
+  string message = 4;
+}
+
+message ApplyRefundRequest {
+  string order_no = 1;
+  string reason = 2;
+}
+
+// 支付通知须验签（HMAC-SHA256）、匹配订单与金额；重复通知不重复记款。
+message HandlePaymentNotifyRequest {
+  string order_no = 1;
+  int64 amount_cents = 2;
+  string channel_trade_no = 3;
+  string status = 4;
+  int64 notified_at_unix = 5;
+  string signature = 6;
+}
+
+message HandlePaymentNotifyResponse {
+  bool accepted = 1;
+  string reason = 2;
+}
+
+message ListShippableOrdersRequest {
+}
+
+message ShipOrderRequest {
+  string order_no = 1;
+  string carrier = 2;
+  string tracking_no = 3;
+}
+
+message ListRefundRequestsRequest {
+  string status = 1;
+}
+
+message RefundRequestDTO {
+  string id = 1;
+  string order_no = 2;
+  string buyer_id = 3;
+  string reason = 4;
+  string status = 5;
+  string reviewer_id = 6;
+  string review_reason = 7;
+  string created_at = 8;
+  string reviewed_at = 9;
+}
+
+message ListRefundRequestsResponse {
+  repeated RefundRequestDTO items = 1;
+}
+
+message ReviewRefundRequest {
+  string refund_id = 1;
+  bool approve = 2;
+  string reason = 3;
+}
+
+message RetryRefundRequest {
+  string order_no = 1;
+}
+
+message PayExceptionDTO {
+  string id = 1;
+  string order_no = 2;
+  string channel_trade_no = 3;
+  int64 amount_cents = 4;
+  string reason = 5;
+  string status = 6;
+  string detail = 7;
+  string created_at = 8;
+  string handled_at = 9;
+}
+
+message ListPayExceptionsRequest {
+  string status = 1;
+}
+
+message ListPayExceptionsResponse {
+  repeated PayExceptionDTO items = 1;
+}
+
+message RefundPayExceptionRequest {
+  string exception_id = 1;
+}
+
+message PayExceptionResponse {
+  PayExceptionDTO exception = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message OrderRecordDTO {
+  string id = 1;
+  string order_no = 2;
+  string type = 3;
+  string operator = 4;
+  string detail = 5;
+  string created_at = 6;
+}
+
+message ListOrderRecordsRequest {
+  string order_no = 1;
+}
+
+message ListOrderRecordsResponse {
+  repeated OrderRecordDTO items = 1;
+}
+
+message OpsSummaryRequest {
+}
+
+message OpsSummaryResponse {
+  int64 total_paid_cents = 1;
+  int64 total_refunded_cents = 2;
+  int64 pending_payment = 3;
+  int64 paid = 4;
+  int64 shipped = 5;
+  int64 cancelled = 6;
+  int64 closed_timeout = 7;
+  int64 refunded = 8;
+  int64 refund_pending = 9;
+  int64 refund_failed = 10;
+  int64 pay_exceptions = 11;
+}
+
+message OrderResponse {
+  string order_no = 1;
+  string buyer_id = 2;
+  string product_id = 3;
+  string product_name = 4;
+  int64 unit_price_cents = 5;
+  int64 quantity = 6;
+  int64 amount_cents = 7;
+  string status = 8;
+  string channel_trade_no = 9;
+  string paid_at = 10;
+  string carrier = 11;
+  string tracking_no = 12;
+  string shipped_at = 13;
+  string cancel_reason = 14;
+  string closed_at = 15;
+  string refund_fail_reason = 16;
+  string refunded_at = 17;
+  string pay_expire_at = 18;
+  string created_at = 19;
+  string updated_at = 20;
+}
+
+message ListOrdersResponse {
+  repeated OrderResponse items = 1;
+  int64 total = 2;
+}

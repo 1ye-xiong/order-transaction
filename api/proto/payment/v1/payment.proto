@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/BwCloudWeGo/bw-cli/api/gen/payment/v1;paymentv1";
+
+service PaymentService {
+  rpc Pay(PayRequest) returns (PayResponse);
+  rpc Refund(RefundRequest) returns (RefundResponse);
+  rpc SetChannelConfig(SetChannelConfigRequest) returns (ChannelConfigResponse);
+  rpc GetChannelConfig(GetChannelConfigRequest) returns (ChannelConfigResponse);
+  rpc ListChannelRecords(ListChannelRecordsRequest) returns (ListChannelRecordsResponse);
+}
+
+message PayRequest {
+  string order_no = 1;
+  string buyer_id = 2;
+  int64 amount_cents = 3;
+}
+
+message PayResponse {
+  bool accepted = 1;
+  string channel_trade_no = 2;
+  string message = 3;
+}
+
+message RefundRequest {
+  string refund_no = 1;
+  string channel_trade_no = 2;
+  int64 amount_cents = 3;
+  string reason = 4;
+}
+
+message RefundResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 渠道行为配置：success/fail/no_notify 决定支付结果；notify_count 支持重复通知；
+// notify_delay_seconds 与 pay_late_seconds 组合用于迟到通知；refund_success_from_attempt 用于首次退款失败再成功。
+message SetChannelConfigRequest {
+  string pay_behavior = 1;
+  int32 notify_count = 2;
+  int32 notify_delay_seconds = 3;
+  int32 pay_late_seconds = 4;
+  int32 refund_success_from_attempt = 5;
+}
+
+message ChannelConfigResponse {
+  string pay_behavior = 1;
+  int32 notify_count = 2;
+  int32 notify_delay_seconds = 3;
+  int32 pay_late_seconds = 4;
+  int32 refund_success_from_attempt = 5;
+}
+
+message GetChannelConfigRequest {
+}
+
+message ChannelRecordDTO {
+  string id = 1;
+  string type = 2;
+  string channel_trade_no = 3;
+  string refund_no = 4;
+  string order_no = 5;
+  int64 amount_cents = 6;
+  string result = 7;
+  int32 attempts = 8;
+  string detail = 9;
+  string created_at = 10;
+}
+
+message ListChannelRecordsRequest {
+}
+
+message ListChannelRecordsResponse {
+  repeated ChannelRecordDTO items = 1;
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "path": "AGENTS.md",
+    "sha256": "45CE2140B0D70B2CCF9C7FB943EE03D022EEBAE05B369B7D34403DA646B56427",
+    "check": "已读取；Skill必要章节检查通过"
+  },
+  {
+    "path": "docs/agents/developer.md",
+    "sha256": "4F9572EAA4551488F033F4F749B52671DA6E57BA188682B057935236AC7675C8",
+    "check": "已读取；Skill必要章节检查通过"
+  },
+  {
+    "path": "docs/agents/tester.md",
+    "sha256": "1150E5CC210B01D3018106767B5DFA3884D668E50B3827A620986D70C0F26856",
+    "check": "已读取；Skill必要章节检查通过"
+  },
+  {
+    "path": "docs/agents/acceptor.md",
+    "sha256": "D324755B6F9F174CAE65A69C39717AF1C8CE720488B8645E11EE8750F2D1E9F0",
+    "check": "已读取；Skill必要章节检查通过"
+  },
+  {
+    "path": ".agents/skills/trade-business-check/SKILL.md",
+    "sha256": "171E1767C37D31F76D86417150928D6EC69EA9F022B9ACD92EAD24282F0C9B03",
+    "check": "已读取；Skill必要章节检查通过"
+  },
+  {
+    "path": ".agents/skills/topic01-acceptance-check/SKILL.md",
+    "sha256": "8F6295B45F3CA1133D9438A5F1508967A3F31D17CCC2D9684A95462D95630A50",
+    "check": "已读取；Skill必要章节检查通过"
+  }
+]

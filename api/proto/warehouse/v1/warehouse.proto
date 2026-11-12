@@ -1,0 +1,37 @@
+﻿syntax = "proto3";
+
+package warehouse.v1;
+
+option go_package = "github.com/BwCloudWeGo/bw-cli/api/gen/warehouse/v1;warehousev1";
+
+service WarehouseService {
+  rpc ListPendingShip(ListPendingShipRequest) returns (ListPendingShipResponse);
+  rpc Ship(ShipRequest) returns (ShipResponse);
+}
+
+message ListPendingShipRequest {
+}
+
+message PendingShipOrderDTO {
+  string order_no = 1;
+  string buyer_id = 2;
+  string product_name = 3;
+  int64 quantity = 4;
+  int64 amount_cents = 5;
+  string paid_at = 6;
+}
+
+message ListPendingShipResponse {
+  repeated PendingShipOrderDTO items = 1;
+}
+
+message ShipRequest {
+  string order_no = 1;
+  string carrier = 2;
+  string tracking_no = 3;
+}
+
+message ShipResponse {
+  bool success = 1;
+  string message = 2;
+}

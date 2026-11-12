@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>小型电商交易演示（题目 01）</title>
+<style>
+  body { font-family: "Microsoft YaHei", sans-serif; margin: 0; background: #f5f6fa; color: #2c3e50; }
+  header { background: #2c3e50; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header .user { font-size: 14px; }
+  main { padding: 16px 24px; }
+  nav.tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  nav.tabs button { padding: 8px 16px; border: 1px solid #d0d6de; background: #fff; cursor: pointer; border-radius: 6px; }
+  nav.tabs button.active { background: #2c74b3; color: #fff; border-color: #2c74b3; }
+  section.card { background: #fff; border: 1px solid #e3e8ee; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border-bottom: 1px solid #eef1f5; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #f2f5f9; }
+  button.act { padding: 4px 10px; margin: 2px; border: 1px solid #b8c4d0; background: #fff; border-radius: 4px; cursor: pointer; }
+  button.act.primary { background: #2c74b3; color: #fff; border-color: #2c74b3; }
+  button.act.danger { background: #c0392b; color: #fff; border-color: #c0392b; }
+  input, select { padding: 6px 8px; border: 1px solid #cdd5df; border-radius: 4px; margin: 2px; }
+  .msg { padding: 8px 12px; border-radius: 6px; margin: 8px 0; font-size: 13px; }
+  .msg.ok { background: #e8f7ee; color: #1e7e46; }
+  .msg.err { background: #fdecec; color: #b02a37; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; background: #eef2f7; }
+  .hint { color: #7a869a; font-size: 12px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+</style>
+</head>
+<body>
+<header>
+  <div>小型电商订单交易、发货与售前退款演示</div>
+  <div class="user" id="who">未登录</div>
+</header>
+<main>
+  <div class="msg err" id="login-tip" style="display:none">请先登录。预置账号（密码均为 123456）：buyer1/buyer2/buyer3（买家）、ops01（运营）、warehouse01（仓库）、cs01（客服）。</div>
+  <section class="card" id="login-card">
+    <div class="row">
+      <input id="account" placeholder="账号，如 buyer1">
+      <input id="password" type="password" placeholder="密码 123456">
+      <button class="act primary" onclick="login()">登录</button>
+      <span class="hint">身份来自登录态，页面传入的用户编号无效（防越权演示点）。</span>
+    </div>
+  </section>
+
+  <nav class="tabs" id="tabs" style="display:none">
+    <button data-tab="buyer" onclick="showTab('buyer')">买家：商品与订单</button>
+    <button data-tab="warehouse" onclick="showTab('warehouse')">仓库：待发货</button>
+    <button data-tab="cs" onclick="showTab('cs')">客服：退款与异常</button>
+    <button data-tab="ops" onclick="showTab('ops')">运营：核查</button>
+    <button data-tab="channel" onclick="showTab('channel')">模拟支付渠道</button>
+  </nav>
+
+  <!-- 买家 -->
+  <div id="tab-buyer" class="tab" style="display:none">
+    <section class="card"><h3>在售商品</h3><table id="product-table"></table>
+      <div class="row" style="margin-top:8px">
+        <input id="buy-product" placeholder="商品ID"><input id="buy-qty" type="number" min="1" max="2" value="1" style="width:60px">
+        <button class="act primary" onclick="createOrder()">下单（1~2 件）</button>
+      </div>
+    </section>
+    <section class="card"><h3>我的订单</h3><table id="order-table"></table></section>
+  </div>
+
+  <!-- 仓库 -->
+  <div id="tab-warehouse" class="tab" style="display:none">
+    <section class="card"><h3>可发货订单（仅待发货；退款申请中的订单不可发货）</h3><table id="ship-table"></table></section>
+  </div>
+
+  <!-- 客服 -->
+  <div id="tab-cs" class="tab" style="display:none">
+    <section class="card"><h3>退款申请审核</h3><table id="refund-table"></table></section>
+    <section class="card"><h3>异常支付处理（迟到支付/验签失败/金额不符）</h3><table id="exception-table"></table></section>
+    <section class="card"><h3>退款失败订单（重试）</h3>
+      <div class="row"><input id="retry-order" placeholder="订单号"><button class="act" onclick="retryRefund()">重试退款</button></div>
+    </section>
+  </div>
+
+  <!-- 运营 -->
+  <div id="tab-ops" class="tab" style="display:none">
+    <section class="card"><h3>交易汇总</h3><div id="ops-summary"></div></section>
+    <section class="card"><h3>商品与库存（上下架/调价/补货）</h3><table id="ops-product-table"></table>
+      <div class="row" style="margin-top:8px">
+        <input id="np-name" placeholder="商品名"><input id="np-price" placeholder="价格(分)" style="width:90px"><input id="np-stock" placeholder="库存" style="width:70px">
+        <button class="act" onclick="createProduct()">创建商品</button>
+      </div>
+    </section>
+    <section class="card"><h3>订单流水核查</h3>
+      <div class="row"><input id="rec-order" placeholder="订单号"><button class="act" onclick="loadRecords()">查询流水</button></div>
+      <table id="record-table" style="margin-top:8px"></table>
+    </section>
+  </div>
+
+  <!-- 渠道 -->
+  <div id="tab-channel" class="tab" style="display:none">
+    <section class="card"><h3>渠道行为配置（模拟服务，用于触发题面要求的四种场景）</h3>
+      <div class="row">
+        <label>支付行为 <select id="ch-behavior"><option value="success">成功</option><option value="fail">失败</option><option value="no_notify">超时不通知</option></select></label>
+        <label>通知次数 <input id="ch-count" type="number" value="1" min="1" max="10" style="width:60px"></label>
+        <label>通知延迟(秒) <input id="ch-delay" type="number" value="1" min="0" style="width:60px"></label>
+        <label>迟到延迟(秒) <input id="ch-late" type="number" value="0" min="0" style="width:60px"></label>
+        <label>退款第N次起成功 <input id="ch-refund" type="number" value="1" min="1" style="width:60px"></label>
+        <button class="act primary" onclick="saveChannel()">保存配置</button>
+      </div>
+      <p class="hint">重复通知：通知次数>1；迟到支付：订单关闭后再收到成功通知；首次退款失败：该值设为 2。</p>
+    </section>
+    <section class="card"><h3>渠道流水</h3><table id="channel-table"></table></section>
+  </div>
+
+  <div id="msg"></div>
+</main>
+<script>
+const API = '/api/v1';
+let token = localStorage.getItem('token') || '';
+let role = localStorage.getItem('role') || '';
+let user = localStorage.getItem('user') || '';
+
+function notify(text, ok) {
+  const box = document.getElementById('msg');
+  box.innerHTML = '<div class="msg ' + (ok ? 'ok' : 'err') + '">' + text + '</div>' + box.innerHTML;
+}
+async function api(method, path, body) {
+  const res = await fetch(API + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || data.error || res.status);
+  return data;
+}
+async function login() {
+  const account = document.getElementById('account').value.trim();
+  const password = document.getElementById('password').value;
+  const res = await fetch(API + '/users/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account, password }) });
+  const data = await res.json();
+  if (!res.ok) { notify('登录失败：' + (data.message || res.status), false); return; }
+  token = data.token; user = data.user.display_name + '(' + data.user.account + ')'; role = data.user.role;
+  localStorage.setItem('token', token); localStorage.setItem('role', role); localStorage.setItem('user', user);
+  initUI();
+}
+function logout() { localStorage.clear(); location.reload(); }
+function initUI() {
+  document.getElementById('who').textContent = user + ' · 角色: ' + role;
+  document.getElementById('login-tip').style.display = 'none';
+  document.getElementById('login-card').style.display = 'none';
+  document.getElementById('tabs').style.display = 'flex';
+  showTab(role === 'ops' ? 'ops' : role === 'cs' ? 'cs' : role === 'warehouse' ? 'warehouse' : 'buyer');
+}
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('nav.tabs button').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('tab-' + tab);
+  if (el) el.style.display = 'block';
+  const btn = document.querySelector('nav.tabs button[data-tab="' + tab + '"]');
+  if (btn) btn.classList.add('active');
+  if (tab === 'buyer') { loadProducts(false); loadMyOrders(); }
+  if (tab === 'warehouse') loadPendingShip();
+  if (tab === 'cs') { loadRefunds(); loadExceptions(); }
+  if (tab === 'ops') { loadSummary(); loadOpsProducts(); }
+  if (tab === 'channel') { loadChannel(); loadChannelRecords(); }
+}
+function fmt(amount) { return '¥' + (amount / 100).toFixed(2); }
+const STATUS_TEXT = { PENDING_PAYMENT: '待付款', PAID: '待发货', SHIPPED: '已发货', CANCELLED: '已取消', CLOSED_TIMEOUT: '超时关闭', REFUND_REQUESTED: '退款审核中', REFUND_FAILED: '退款失败待处理', REFUNDED: '已退款' };
+
+async function loadProducts(all) {
+  const data = await api('GET', '/products' + (all ? '?include_off_sale=true' : ''));
+  const rows = data.items.map(p => '<tr><td>' + p.id + '</td><td>' + p.name + '</td><td>' + fmt(p.price_cents) + '</td><td>' + p.available + '</td><td>' + (p.on_sale ? '在售' : '已下架') + '</td></tr>').join('');
+  document.getElementById('product-table').innerHTML = '<tr><th>ID</th><th>商品</th><th>价格</th><th>可售</th><th>状态</th></tr>' + rows;
+}
+async function loadOpsProducts() {
+  const data = await api('GET', '/products?include_off_sale=true');
+  const rows = data.items.map(p => '<tr><td>' + p.id + '</td><td>' + p.name + '</td><td>' + fmt(p.price_cents) + '</td><td>总量 ' + p.stock_total + ' / 已占用 ' + p.reserved + ' / 可售 ' + p.available + '</td><td>' + (p.on_sale ? '在售' : '已下架') + '</td>' +
+    '<td><button class="act" onclick="updateProduct(\'' + p.id + '\',false,true,' + !p.on_sale + ')">' + (p.on_sale ? '下架' : '上架') + '</button>' +
+    '<button class="act" onclick="restock(\'' + p.id + '\')">补货+5</button>' +
+    '<button class="act" onclick="reprice(\'' + p.id + '\')">调价</button></td></tr>').join('');
+  document.getElementById('ops-product-table').innerHTML = '<tr><th>ID</th><th>商品</th><th>价格</th><th>库存</th><th>状态</th><th>操作</th></tr>' + rows;
+}
+async function createProduct() {
+  try {
+    await api('POST', '/products', { name: npname.value, price_cents: +npprice.value, stock_total: +npstock.value });
+    notify('商品已创建', true); loadOpsProducts();
+  } catch (e) { notify(e.message, false); }
+}
+async function updateProduct(id, setPrice, setOnSale, onSale, delta, price) {
+  try {
+    await api('PUT', '/products/' + id, { set_price: !!setPrice, price_cents: price || 0, set_on_sale: !!setOnSale, on_sale: !!onSale, stock_delta: delta || 0 });
+    notify('已更新', true); loadOpsProducts();
+  } catch (e) { notify(e.message, false); }
+}
+function restock(id) { updateProduct(id, false, false, false, 5, 0); }
+function reprice(id) { const v = prompt('新价格（分）'); if (v) updateProduct(id, true, false, false, 0, +v); }
+
+async function createOrder() {
+  try {
+    const data = await api('POST', '/orders', { product_id: document.getElementById('buy-product').value.trim(), quantity: +document.getElementById('buy-qty').value });
+    notify('下单成功：' + data.order_no + '（10 分钟内付款，可在渠道控制台调整通知行为）', true);
+    loadMyOrders();
+  } catch (e) { notify('下单失败：' + e.message, false); }
+}
+async function loadMyOrders() {
+  const data = await api('GET', '/orders/mine');
+  const rows = data.items.map(o => {
+    let ops = '';
+    if (o.status === 'PENDING_PAYMENT') ops = '<button class="act primary" onclick="pay(\'' + o.order_no + '\')">付款</button><button class="act danger" onclick="cancelOrder(\'' + o.order_no + '\')">取消</button>';
+    if (o.status === 'PAID') ops = '<button class="act danger" onclick="applyRefund(\'' + o.order_no + '\')">申请退款</button>';
+    const ship = o.tracking_no ? '，运单：' + o.carrier + ' ' + o.tracking_no : '';
+    const reason = o.cancel_reason ? '，' + o.cancel_reason : (o.refund_fail_reason ? '，' + o.refund_fail_reason : '');
+    return '<tr><td>' + o.order_no + '</td><td>' + o.product_name + ' x' + o.quantity + '</td><td>' + fmt(o.amount_cents) + '</td><td><span class="tag">' + (STATUS_TEXT[o.status] || o.status) + '</span></td><td>' + ship + reason + '</td><td>' + ops + '</td></tr>';
+  }).join('');
+  document.getElementById('order-table').innerHTML = '<tr><th>订单号</th><th>商品</th><th>金额</th><th>状态</th><th>说明</th><th>操作</th></tr>' + rows;
+}
+async function pay(orderNo) {
+  try { await api('POST', '/orders/' + orderNo + '/pay'); notify('渠道已受理，等待异步通知…', true); setTimeout(loadMyOrders, 2500); }
+  catch (e) { notify(e.message, false); }
+}
+async function cancelOrder(orderNo) {
+  try { await api('POST', '/orders/' + orderNo + '/cancel'); notify('已取消，库存占用已释放', true); loadMyOrders(); }
+  catch (e) { notify(e.message, false); }
+}
+async function applyRefund(orderNo) {
+  const reason = prompt('退款原因');
+  if (!reason) return;
+  try { await api('POST', '/orders/' + orderNo + '/refund', { reason }); notify('退款申请已提交，发货暂停', true); loadMyOrders(); }
+  catch (e) { notify(e.message, false); }
+}
+
+async function loadPendingShip() {
+  const data = await api('GET', '/warehouse/orders');
+  const rows = data.items.map(o => '<tr><td>' + o.order_no + '</td><td>' + o.product_name + ' x' + o.quantity + '</td><td>' + fmt(o.amount_cents) + '</td><td>' + o.paid_at + '</td>' +
+    '<td><input id="carrier-' + o.order_no + '" placeholder="承运方" style="width:90px"><input id="track-' + o.order_no + '" placeholder="运单号" style="width:110px"><button class="act primary" onclick="ship(\'' + o.order_no + '\')">发货</button></td></tr>').join('');
+  document.getElementById('ship-table').innerHTML = '<tr><th>订单号</th><th>商品</th><th>金额</th><th>付款时间</th><th>发货登记</th></tr>' + rows;
+}
+async function ship(orderNo) {
+  try {
+    const data = await api('POST', '/warehouse/orders/' + orderNo + '/ship', { carrier: document.getElementById('carrier-' + orderNo).value, tracking_no: document.getElementById('track-' + orderNo).value });
+    notify(data.message || '已发货', data.success);
+    loadPendingShip();
+  } catch (e) { notify(e.message, false); }
+}
+
+async function loadRefunds() {
+  const data = await api('GET', '/cs/refunds?status=PENDING');
+  const rows = data.items.map(r => '<tr><td>' + r.id + '</td><td>' + r.order_no + '</td><td>' + r.reason + '</td>' +
+    '<td><input id="review-' + r.id + '" placeholder="审核原因" style="width:140px"><button class="act primary" onclick="reviewRefund(\'' + r.id + '\',true)">同意</button><button class="act danger" onclick="reviewRefund(\'' + r.id + '\',false)">拒绝</button></td></tr>').join('');
+  document.getElementById('refund-table').innerHTML = '<tr><th>申请ID</th><th>订单号</th><th>原因</th><th>审核</th></tr>' + rows;
+}
+async function reviewRefund(id, approve) {
+  try {
+    const data = await api('POST', '/cs/refunds/' + id + '/review', { approve, reason: document.getElementById('review-' + id).value });
+    notify('审核完成：' + data.status + (data.refund_fail_reason ? '（' + data.refund_fail_reason + '）' : ''), true);
+    loadRefunds();
+  } catch (e) { notify(e.message, false); }
+}
+async function loadExceptions() {
+  const data = await api('GET', '/cs/pay-exceptions?status=PENDING');
+  const rows = data.items.map(x => '<tr><td>' + x.id + '</td><td>' + x.order_no + '</td><td>' + x.channel_trade_no + '</td><td>' + fmt(x.amount_cents) + '</td><td>' + x.reason + '</td><td>' + x.detail + '</td>' +
+    '<td><button class="act primary" onclick="refundException(\'' + x.id + '\')">发起退款</button></td></tr>').join('');
+  document.getElementById('exception-table').innerHTML = '<tr><th>ID</th><th>订单号</th><th>渠道交易号</th><th>金额</th><th>原因</th><th>详情</th><th>处理</th></tr>' + rows;
+}
+async function refundException(id) {
+  try {
+    const data = await api('POST', '/cs/pay-exceptions/' + id + '/refund');
+    notify('退款' + (data.success ? '成功' : '失败') + '：' + data.message, data.success);
+    loadExceptions();
+  } catch (e) { notify(e.message, false); }
+}
+async function retryRefund() {
+  try {
+    const data = await api('POST', '/cs/orders/' + document.getElementById('retry-order').value.trim() + '/refund-retry');
+    notify('重试完成：' + data.status, true);
+  } catch (e) { notify(e.message, false); }
+}
+
+async function loadSummary() {
+  const d = await api('GET', '/ops/summary');
+  document.getElementById('ops-summary').innerHTML =
+    '已收款 <b>' + fmt(d.total_paid_cents) + '</b>，已退款 <b>' + fmt(d.total_refunded_cents) + '</b>，异常支付 <b>' + d.pay_exceptions + '</b> 条<br>' +
+    '订单：待付款 ' + d.pending_payment + ' / 待发货 ' + d.paid + ' / 已发货 ' + d.shipped + ' / 已取消 ' + d.cancelled +
+    ' / 超时关闭 ' + d.closed_timeout + ' / 退款审核中 ' + d.refund_pending + ' / 退款失败 ' + d.refund_failed + ' / 已退款 ' + d.refunded;
+}
+async function loadRecords() {
+  const d = await api('GET', '/ops/orders/' + document.getElementById('rec-order').value.trim() + '/records');
+  const rows = d.items.map(r => '<tr><td>' + r.created_at + '</td><td>' + r.type + '</td><td>' + r.operator + '</td><td>' + r.detail + '</td></tr>').join('');
+  document.getElementById('record-table').innerHTML = '<tr><th>时间</th><th>类型</th><th>操作者</th><th>详情</th></tr>' + rows;
+}
+
+async function loadChannel() {
+  const d = await api('GET', '/channel/config');
+  chbehavior.value = d.pay_behavior; chcount.value = d.notify_count; chdelay.value = d.notify_delay_seconds; chlate.value = d.pay_late_seconds; chrefund.value = d.refund_success_from_attempt;
+}
+async function saveChannel() {
+  try {
+    await api('PUT', '/channel/config', { pay_behavior: chbehavior.value, notify_count: +chcount.value, notify_delay_seconds: +chdelay.value, pay_late_seconds: +chlate.value, refund_success_from_attempt: +chrefund.value });
+    notify('渠道行为已更新', true);
+  } catch (e) { notify(e.message, false); }
+}
+async function loadChannelRecords() {
+  const d = await api('GET', '/channel/records');
+  const rows = d.items.map(r => '<tr><td>' + r.created_at + '</td><td>' + r.type + '</td><td>' + r.order_no + '</td><td>' + r.channel_trade_no + '</td><td>' + fmt(r.amount_cents) + '</td><td>' + r.result + '</td><td>' + r.detail + '</td></tr>').join('');
+  document.getElementById('channel-table').innerHTML = '<tr><th>时间</th><th>类型</th><th>订单</th><th>交易号</th><th>金额</th><th>结果</th><th>详情</th></tr>' + rows;
+}
+
+if (token) { user = localStorage.getItem('user'); role = localStorage.getItem('role'); initUI(); }
+else { document.getElementById('login-tip').style.display = 'block'; }
+</script>
+</body>
+</html>

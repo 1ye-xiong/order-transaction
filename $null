@@ -1,0 +1,4 @@
+FINDSTR: Cannot open tool
+FINDSTR: Cannot open cover
+FINDSTR: Cannot open -func=coverage-core.out
+cover: open coverage.out: The system cannot find the file specified.

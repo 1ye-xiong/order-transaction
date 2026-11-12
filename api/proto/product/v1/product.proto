@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package product.v1;
+
+option go_package = "github.com/BwCloudWeGo/bw-cli/api/gen/product/v1;productv1";
+
+// ProductService 提供商品上下架与可售数量管理。
+service ProductService {
+  rpc CreateProduct(CreateProductRequest) returns (ProductResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (ProductResponse);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  // GetProduct 供订单服务查询商品名称与价格（下单时固化）。
+  rpc GetProduct(GetProductRequest) returns (ProductResponse);
+  rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse);
+  rpc ReleaseStock(ReleaseStockRequest) returns (ReleaseStockResponse);
+  rpc ConfirmStock(ConfirmStockRequest) returns (ConfirmStockResponse);
+  // RestoreStock 退款成功后把已扣减库存恢复为可售（幂等）。
+  rpc RestoreStock(RestoreStockRequest) returns (RestoreStockResponse);
+}
+
+message CreateProductRequest {
+  string name = 1;
+  int64 price_cents = 2;
+  int64 stock_total = 3;
+}
+
+// set_price/set_on_sale 为 true 时才修改对应字段；stock_delta 为补货增量，0 表示不调整。
+message UpdateProductRequest {
+  string id = 1;
+  bool set_price = 2;
+  int64 price_cents = 3;
+  bool set_on_sale = 4;
+  bool on_sale = 5;
+  int64 stock_delta = 6;
+}
+
+message ListProductsRequest {
+  bool include_off_sale = 1;
+}
+
+message GetProductRequest {
+  string id = 1;
+}
+
+// ReserveStock/ReleaseStock/ConfirmStock 供订单服务内部调用，按订单号幂等。
+message ReserveStockRequest {
+  string order_no = 1;
+  string product_id = 2;
+  int64 quantity = 3;
+}
+
+message ReleaseStockRequest {
+  string order_no = 1;
+}
+
+message ConfirmStockRequest {
+  string order_no = 1;
+}
+
+message RestoreStockRequest {
+  string order_no = 1;
+}
+
+message RestoreStockResponse {
+  bool ok = 1;
+}
+
+message ReserveStockResponse {
+  bool ok = 1;
+  string message = 2;
+}
+
+message ReleaseStockResponse {
+  bool ok = 1;
+}
+
+message ConfirmStockResponse {
+  bool ok = 1;
+}
+
+// available = stock_total - reserved，反映已占用数量。
+message ProductResponse {
+  string id = 1;
+  string name = 2;
+  int64 price_cents = 3;
+  int64 stock_total = 4;
+  int64 reserved = 5;
+  int64 available = 6;
+  bool on_sale = 7;
+  string updated_at = 8;
+}
+
+message ListProductsResponse {
+  repeated ProductResponse items = 1;
+}

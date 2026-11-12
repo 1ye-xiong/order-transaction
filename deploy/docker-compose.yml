@@ -1,0 +1,72 @@
+﻿services:
+  user:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["/app/user"]
+    environment:
+      - CONFIG_PATH=configs/config.yaml
+    volumes:
+      - dbdata:/app/data
+  product:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["/app/product"]
+    environment:
+      - CONFIG_PATH=configs/config.yaml
+    volumes:
+      - dbdata:/app/data
+  order:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["/app/order"]
+    depends_on:
+      - user
+      - product
+      - payment
+    environment:
+      - CONFIG_PATH=configs/config.yaml
+    volumes:
+      - dbdata:/app/data
+  payment:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["/app/payment"]
+    depends_on:
+      - order
+    environment:
+      - CONFIG_PATH=configs/config.yaml
+    volumes:
+      - dbdata:/app/data
+  warehouse:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["/app/warehouse"]
+    depends_on:
+      - order
+    environment:
+      - CONFIG_PATH=configs/config.yaml
+  gateway:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["/app/gateway"]
+    depends_on:
+      - user
+      - product
+      - order
+      - payment
+      - warehouse
+    ports:
+      - "8080:8080"
+    environment:
+      - CONFIG_PATH=configs/config.yaml
+    volumes:
+      - ../web:/app/web:ro
+      - dbdata:/app/data
+volumes:
+  dbdata:
