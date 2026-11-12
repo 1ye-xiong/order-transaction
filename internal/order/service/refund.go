@@ -173,7 +173,8 @@ func (s *Service) executeRefund(ctx context.Context, orderNo string, refundNo st
 		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
 			OrderNo: orderNo, Type: entity.RecordTypeRefund, Operator: operatorID,
 			Detail: fmt.Sprintf("退款成功 refund_no=%s amount=%d，恢复可售数量", refundNo, order.AmountCents()),
-		})	} else {
+		})
+	} else {
 		changed, err := s.repo.Transition(ctx, orderNo, entity.StatusRefundRequested, entity.StatusRefundFailed, func(o *entity.Order) {
 			o.RefundFailReason = message
 		}, now)

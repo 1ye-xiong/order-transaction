@@ -47,7 +47,8 @@ func TestProductRoleGuard(t *testing.T) {
 	}
 }
 
-func TestProductCRUD(t *testing.T) {	s := newTestServer(t)
+func TestProductCRUD(t *testing.T) {
+	s := newTestServer(t)
 	created, err := s.Create(ctxWithRole("ops"), &productv1.CreateProductRequest{Name: "e", PriceCents: 10000, StockTotal: 5})
 	if err != nil {
 		t.Fatalf("create: %v", err)

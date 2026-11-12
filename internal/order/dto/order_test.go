@@ -1,4 +1,4 @@
-﻿package dto
+package dto
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func TestFromOrder(t *testing.T) {
 		UnitPriceCents: 10000, Quantity: 2, Status: entity.StatusPaid,
 		ChannelTradeNo: "CH-1", PaidAt: &paid, Carrier: "SF", TrackingNo: "SF001",
 		CancelReason: "", RefundFailReason: "channel busy",
-		PayExpireAt:  expire, CreatedAt: now, UpdatedAt: now,
+		PayExpireAt: expire, CreatedAt: now, UpdatedAt: now,
 	}
 	got := FromOrder(order)
 	if got.AmountCents != 20000 {
