@@ -19,10 +19,21 @@ import (
 	"github.com/BwCloudWeGo/bw-cli/pkg/observability"
 )
 
+var notifySignals = signal.Notify
+var listenTCP = net.Listen
+var serveHTTP = func(s *http.Server, l net.Listener) error { return s.Serve(l) }
+var awaitShutdown = waitForShutdown
+
 func main() {
-	// 构建依赖前先加载运行时配置。
-	if err := config.InitGlobal("configs/config.yaml"); err != nil {
+	if err := run("configs/config.yaml"); err != nil {
 		panic(err)
+	}
+}
+
+func run(configPath string) error {
+	// 构建依赖前先加载运行时配置。
+	if err := config.InitGlobal(configPath); err != nil {
+		return err
 	}
 	cfg := config.MustGlobal()
 	gatewayServiceName := cfg.ServiceName("gateway")
@@ -31,7 +42,7 @@ func main() {
 
 	log, err := logger.New(cfg.Log)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer log.Sync()
 	observability.Register(gatewayServiceName, log)
@@ -39,7 +50,7 @@ func main() {
 
 	clients, err := client.New(cfg, log)
 	if err != nil {
-		log.Fatal("initialize grpc clients failed", zap.Error(err))
+		return fmt.Errorf("initialize grpc clients failed"+": %w", err)
 	}
 	defer clients.Close()
 
@@ -52,21 +63,22 @@ func main() {
 		WriteTimeout: time.Duration(cfg.HTTP.WriteTimeoutSeconds) * time.Second,
 	}
 
-	listener, err := net.Listen("tcp", addr)
+	listener, err := listenTCP("tcp", addr)
 	if err != nil {
 		printStartupFailure(addr, err)
-		log.Fatal("gateway listen failed", zap.String("addr", addr), zap.Error(err))
+		return fmt.Errorf("gateway listen failed"+": %w", err)
 	}
 	printStartupSummary(cfg, addr)
 
 	go func() {
 		log.Info("gateway listening", zap.String("addr", addr))
-		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Fatal("gateway stopped unexpectedly", zap.Error(err))
+		if err := serveHTTP(server, listener); err != nil && err != http.ErrServerClosed {
+			log.Error("gateway stopped unexpectedly", zap.Error(err))
 		}
 	}()
 
-	waitForShutdown(server, log)
+	awaitShutdown(server, log)
+	return nil
 }
 
 func printStartupFailure(addr string, err error) {
@@ -92,7 +104,8 @@ func printStartupSummary(cfg *config.Config, addr string) {
 
 func waitForShutdown(server *http.Server, log *zap.Logger) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	notifySignals(ch, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(ch)
 	<-ch
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -23,10 +23,22 @@ import (
 	"github.com/BwCloudWeGo/bw-cli/pkg/logger"
 )
 
+var notifySignals = signal.Notify
+var listenTCP = net.Listen
+
+var serveGRPC = func(server *grpc.Server, listener net.Listener) error { return server.Serve(listener) }
+var beginShutdown = func(server *grpc.Server, log *zap.Logger) { go shutdownOnSignal(server, log) }
+
 func main() {
-	// 加载服务身份、数据库和日志配置。
-	if err := config.InitGlobal("configs/config.yaml"); err != nil {
+	if err := run("configs/config.yaml"); err != nil {
 		panic(err)
+	}
+}
+
+func run(configPath string) error {
+	// 加载服务身份、数据库和日志配置。
+	if err := config.InitGlobal(configPath); err != nil {
+		return err
 	}
 	cfg := config.MustGlobal()
 	cfg.Log.Service = cfg.ServiceName("user")
@@ -34,7 +46,7 @@ func main() {
 
 	log, err := logger.New(cfg.Log)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer log.Sync()
 	config.PrintSourceNotice(cfg, os.Stdout)
@@ -42,36 +54,43 @@ func main() {
 	// Database.Open 会根据配置的驱动选择 SQLite、MySQL 或 PostgreSQL。
 	db, err := database.Open(cfg.Database, cfg.MySQL, cfg.PostgreSQL, log)
 	if err != nil {
-		log.Fatal("open database failed", zap.Error(err))
+		return fmt.Errorf("open database failed"+": %w", err)
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
 	if err := userrepo.AutoMigrate(db); err != nil {
-		log.Fatal("migrate user database failed", zap.Error(err))
+		return fmt.Errorf("migrate user database failed"+": %w", err)
 	}
 
 	repo := userrepo.NewGormRepository(db, log)
 	svc := userservice.NewService(repo, userrepo.NewSHA256Hasher())
 	if err := seedAccounts(context.Background(), svc, log); err != nil {
-		log.Fatal("seed accounts failed", zap.Error(err))
+		return fmt.Errorf("seed accounts failed"+": %w", err)
 	}
 	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
 	userv1.RegisterUserServiceServer(server, userhandler.NewServer(svc, log))
 
 	addr := fmt.Sprintf("%s:%d", cfg.GRPC.Host, cfg.ServicePort("user", 9001))
-	listener, err := net.Listen("tcp", addr)
+	listener, err := listenTCP("tcp", addr)
 	if err != nil {
-		log.Fatal("listen failed", zap.String("addr", addr), zap.Error(err))
+		return fmt.Errorf("listen failed"+": %w", err)
 	}
 
-	go shutdownOnSignal(server, log)
+	beginShutdown(server, log)
 	log.Info("user service listening", zap.String("addr", addr))
-	if err := server.Serve(listener); err != nil {
-		log.Fatal("user service stopped unexpectedly", zap.Error(err))
+	if err := serveGRPC(server, listener); err != nil {
+		return fmt.Errorf("user service stopped unexpectedly"+": %w", err)
 	}
+	return nil
 }
 
 func shutdownOnSignal(server *grpc.Server, log *zap.Logger) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	notifySignals(ch, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(ch)
 	<-ch
 	log.Info("user service shutting down")
 	server.GracefulStop()

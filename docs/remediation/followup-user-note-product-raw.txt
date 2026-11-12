@@ -1,0 +1,14 @@
+	github.com/BwCloudWeGo/bw-cli/internal/user/dto		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/internal/user/entity		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/internal/user/handler		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/internal/user/model		coverage: 0.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/repo	0.383s	coverage: 95.3% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/service	1.605s	coverage: 96.6% of statements
+	github.com/BwCloudWeGo/bw-cli/internal/note/dto		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/internal/note/entity		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/internal/note/handler		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/internal/note/model		coverage: 0.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/repo	0.379s	coverage: 94.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/service	1.405s	coverage: 91.3% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/service	0.301s	coverage: 92.1% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/repo	5.356s	coverage: 87.3% of statements

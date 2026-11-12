@@ -44,3 +44,34 @@ func TestPrependPathAddsPathWhenMissing(t *testing.T) {
 	require.Len(t, got, 2)
 	require.True(t, strings.HasPrefix(got[1], "PATH=bin"))
 }
+
+func TestProtoHelpersAndConfig(t *testing.T) {
+	t.Setenv("PROTOC", " custom ")
+	t.Setenv("PROTO_PATH", " proto ")
+	t.Setenv("PROTO_OUT", " out ")
+	c := protoConfigFromEnv()
+	require.Equal(t, "custom", c.Protoc)
+	require.Equal(t, "proto", c.ProtoPath)
+	require.Equal(t, "out", c.ProtoOut)
+	t.Setenv("PROTOC", "")
+	require.Equal(t, "protoc", protoConfigFromEnv().Protoc)
+	require.Equal(t, "fallback", getenvDefault("MISSING_ENV_AUDIT", "fallback"))
+	require.Equal(t, []string{"a", "b"}, cleanPathEntries([]string{" a ", "", "b"}))
+}
+func TestCollectProtoFilesErrorsOnFile(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "notdir")
+	require.NoError(t, os.WriteFile(p, []byte("x"), 0644))
+	_, err := collectProtoFiles(p)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not a directory")
+}
+func TestPrependPathHandlesMalformedAndExistingCaseInsensitive(t *testing.T) {
+	got := prependPath([]string{"bad", "path=base"}, " ", "new")
+	require.Equal(t, "path=new"+string(os.PathListSeparator)+"base", got[1])
+	got = prependPath([]string{"Path=base"})
+	require.Equal(t, []string{"Path=base"}, got)
+}
+func TestWithGoPluginPathPreservesEnvironment(t *testing.T) {
+	got := withGoPluginPath([]string{"OTHER=x"})
+	require.Contains(t, strings.ToLower(strings.Join(got, ";")), "path=")
+}

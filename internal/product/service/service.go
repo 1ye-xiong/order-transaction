@@ -30,6 +30,15 @@ func (s *Service) Create(ctx context.Context, cmd dto.CreateCommand) (*dto.Produ
 
 // Update 调整售价、上下架或补货（运营）。已有订单金额不受调价影响。
 func (s *Service) Update(ctx context.Context, cmd dto.UpdateCommand) (*dto.ProductDTO, error) {
+	if atomic, ok := s.repo.(interface {
+		UpdateAtomic(context.Context, dto.UpdateCommand) (*entity.Product, error)
+	}); ok {
+		product, err := atomic.UpdateAtomic(ctx, cmd)
+		if err != nil {
+			return nil, err
+		}
+		return dto.FromProduct(product), nil
+	}
 	product, err := s.repo.FindByID(ctx, cmd.ID)
 	if err != nil {
 		return nil, err

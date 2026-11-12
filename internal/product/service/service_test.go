@@ -8,8 +8,30 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/BwCloudWeGo/bw-cli/internal/product/dto"
+	"github.com/BwCloudWeGo/bw-cli/internal/product/entity"
 	"github.com/BwCloudWeGo/bw-cli/internal/product/repo"
 )
+
+type fallbackRepository struct{ entity.Repository }
+
+func TestFallbackUpdateValidatesAndPersists(t *testing.T) {
+	ctx := context.Background()
+	_, r := newTestService(t)
+	s := NewService(fallbackRepository{r})
+	p, e := s.Create(ctx, dto.CreateCommand{Name: "fallback", PriceCents: 100, StockTotal: 2})
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, cmd := range []dto.UpdateCommand{{ID: "missing"}, {ID: p.ID, SetPrice: true, PriceCents: -1}, {ID: p.ID, StockDelta: -1}} {
+		if _, e := s.Update(ctx, cmd); e == nil {
+			t.Fatalf("invalid update accepted %+v", cmd)
+		}
+	}
+	got, e := s.Update(ctx, dto.UpdateCommand{ID: p.ID, SetPrice: true, PriceCents: 200, SetOnSale: true, OnSale: false, StockDelta: 3})
+	if e != nil || got.PriceCents != 200 || got.OnSale || got.StockTotal != 5 {
+		t.Fatalf("update %+v %v", got, e)
+	}
+}
 
 func newTestService(t *testing.T) (*Service, *repo.GormRepository) {
 	t.Helper()
@@ -102,5 +124,22 @@ func TestCreateUpdateListAndGet(t *testing.T) {
 	}
 	if err := s.Release(ctx, "ORD-NONE"); err != nil {
 		t.Fatalf("释放未知订单应幂等成功: %v", err)
+	}
+}
+
+func TestUpdateAtomicRejectsInvalidCommands(t *testing.T) {
+	ctx := context.Background()
+	s, r := newTestService(t)
+	p, err := s.Create(ctx, dto.CreateCommand{Name: "atomic", PriceCents: 100, StockTotal: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cmd := range []dto.UpdateCommand{{ID: p.ID, SetPrice: true, PriceCents: 0}, {ID: p.ID, StockDelta: -1}, {ID: "missing", SetOnSale: true, OnSale: false}} {
+		if _, err := s.Update(ctx, cmd); err == nil {
+			t.Fatalf("invalid atomic update accepted: %+v", cmd)
+		}
+	}
+	if _, err := r.UpdateAtomic(ctx, dto.UpdateCommand{ID: p.ID, SetPrice: true, PriceCents: 200, SetOnSale: true, OnSale: false, StockDelta: 2}); err != nil {
+		t.Fatal(err)
 	}
 }

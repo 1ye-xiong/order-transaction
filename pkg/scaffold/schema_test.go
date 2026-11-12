@@ -38,3 +38,12 @@ func TestInspectSQLiteDatabaseSchemaDetectsTablesColumnsAndForeignKeys(t *testin
 	require.Equal(t, "product_spu", snapshot.ForeignKeys[0].ToTable)
 	require.Equal(t, "id", snapshot.ForeignKeys[0].ToColumn)
 }
+
+func TestInspectSchemaRejectsUnknownAndMissingDSN(t *testing.T) {
+	_, e := InspectDatabaseSchema(DatabaseConnection{Driver: "sqlite"}, "")
+	require.Error(t, e)
+	_, e = InspectDatabaseSchema(DatabaseConnection{Driver: "oracle", DSN: "x"}, "")
+	require.Error(t, e)
+	_, e = InspectDatabaseSchema(DatabaseConnection{Driver: "postgres", DSN: "bad"}, "")
+	require.Error(t, e)
+}

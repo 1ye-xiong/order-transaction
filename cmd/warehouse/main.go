@@ -58,9 +58,21 @@ func (g *orderGateway) Ship(ctx context.Context, orderNo string, carrier string,
 	return nil
 }
 
+var notifySignals = signal.Notify
+var listenTCP = net.Listen
+
+var serveGRPC = func(server *grpc.Server, listener net.Listener) error { return server.Serve(listener) }
+var beginShutdown = func(server *grpc.Server, log *zap.Logger) { go shutdownOnSignal(server, log) }
+
 func main() {
-	if err := config.InitGlobal("configs/config.yaml"); err != nil {
+	if err := run("configs/config.yaml"); err != nil {
 		panic(err)
+	}
+}
+
+func run(configPath string) error {
+	if err := config.InitGlobal(configPath); err != nil {
+		return err
 	}
 	cfg := config.MustGlobal()
 	cfg.Log.Service = cfg.ServiceName("warehouse")
@@ -68,14 +80,14 @@ func main() {
 
 	log, err := logger.New(cfg.Log)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer log.Sync()
 	config.PrintSourceNotice(cfg, os.Stdout)
 
 	orderConn, err := grpc.Dial(cfg.ServiceTarget("order"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatal("dial order service failed", zap.Error(err))
+		return fmt.Errorf("dial order service failed"+": %w", err)
 	}
 	defer orderConn.Close()
 
@@ -85,21 +97,23 @@ func main() {
 
 	port := cfg.ServicePort("warehouse", defaultGRPCPort)
 	addr := fmt.Sprintf("%s:%d", cfg.GRPC.Host, port)
-	listener, err := net.Listen("tcp", addr)
+	listener, err := listenTCP("tcp", addr)
 	if err != nil {
-		log.Fatal("listen failed", zap.String("addr", addr), zap.Error(err))
+		return fmt.Errorf("listen failed"+": %w", err)
 	}
 
-	go shutdownOnSignal(server, log)
+	beginShutdown(server, log)
 	log.Info("warehouse service listening", zap.String("addr", addr))
-	if err := server.Serve(listener); err != nil {
-		log.Fatal("warehouse service stopped unexpectedly", zap.Error(err))
+	if err := serveGRPC(server, listener); err != nil {
+		return fmt.Errorf("warehouse service stopped unexpectedly"+": %w", err)
 	}
+	return nil
 }
 
 func shutdownOnSignal(server *grpc.Server, log *zap.Logger) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	notifySignals(ch, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(ch)
 	<-ch
 	log.Info("warehouse service shutting down")
 	server.GracefulStop()

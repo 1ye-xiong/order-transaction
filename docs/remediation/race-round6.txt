@@ -1,0 +1,73 @@
+?   	github.com/BwCloudWeGo/bw-cli/api/gen/note/v1	[no test files]
+?   	github.com/BwCloudWeGo/bw-cli/api/gen/order/v1	[no test files]
+?   	github.com/BwCloudWeGo/bw-cli/api/gen/payment/v1	[no test files]
+?   	github.com/BwCloudWeGo/bw-cli/api/gen/product/v1	[no test files]
+?   	github.com/BwCloudWeGo/bw-cli/api/gen/user/v1	[no test files]
+?   	github.com/BwCloudWeGo/bw-cli/api/gen/warehouse/v1	[no test files]
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/bw-cli	1.196s
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/gateway	1.919s
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/note	1.918s
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/order	3.958s
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/payment	2.888s
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/product	2.727s
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/user	3.445s
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/warehouse	1.792s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/client	1.446s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/handler	1.231s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/request	1.081s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/router	1.603s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/dto	1.093s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/entity	1.255s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/handler	1.255s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/model	1.103s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/repo	1.348s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/service	1.346s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/dto	1.252s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/entity	1.252s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/handler	1.916s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/model	1.318s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/repo	3.712s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	1.824s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/entity	1.067s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/handler	1.240s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/model	1.062s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/repo	1.383s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/service	1.164s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/dto	1.061s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/entity	1.036s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/handler	1.279s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/model	1.049s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/repo	7.477s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/service	1.178s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/dto	1.073s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/entity	1.086s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/handler	1.057s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/model	1.086s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/repo	1.129s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/service	1.025s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/handler	1.044s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/service	1.081s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/alipayx	1.271s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/config	1.180s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/database	1.160s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/errors	1.060s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/esx	1.057s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/filex	1.141s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/grpcx	1.067s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/httpx	1.056s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/kafkax	1.067s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/logger	1.057s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/middleware	1.084s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/mongox	1.056s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/mysqlx	1.075s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/nacosx	1.080s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/observability	1.059s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/postgresx	1.099s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/redisx	1.056s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/rocketmqx	1.064s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/scaffold	1.248s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/timex	1.020s
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/validator	1.019s
+ok  	github.com/BwCloudWeGo/bw-cli/tools/coveragegate	1.034s
+ok  	github.com/BwCloudWeGo/bw-cli/tools/protogen	1.066s
+ok  	github.com/BwCloudWeGo/bw-cli/tools/snowFlake	1.016s

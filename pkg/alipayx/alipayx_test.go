@@ -53,3 +53,25 @@ func TestEnsureRefundSuccessReturnsReadableFailure(t *testing.T) {
 	require.ErrorContains(t, err, "40002")
 	require.ErrorContains(t, err, "invalid refund amount")
 }
+
+func TestValidationAndConfig(t *testing.T) {
+	if _, err := NewClient(Config{}); err == nil {
+		t.Fatal("expected app id")
+	}
+	if _, err := NewClient(Config{AppID: "a", PrivateKey: "k", AlipayPublicKey: "p", AppCertPublicKeyPath: "x"}); err == nil {
+		t.Fatal("mixed cert")
+	}
+	for _, req := range []PayRequest{{}, {OutTradeNo: "x"}, {OutTradeNo: "x", Subject: "s"}} {
+		if err := validatePayRequest(req); err == nil {
+			t.Fatal(req)
+		}
+	}
+	for _, req := range []RefundRequest{{}, {OutTradeNo: "x"}, {OutTradeNo: "x", RefundAmount: "1"}} {
+		if err := validateRefundRequest(req); err == nil {
+			t.Fatal(req)
+		}
+	}
+	if firstNonEmpty(" ", " x ") != "x" || firstNonEmpty(" ") != "" {
+		t.Fatal()
+	}
+}

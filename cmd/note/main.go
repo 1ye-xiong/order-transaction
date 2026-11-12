@@ -22,10 +22,23 @@ import (
 	"github.com/BwCloudWeGo/bw-cli/pkg/mongox"
 )
 
+var notifySignals = signal.Notify
+var listenTCP = net.Listen
+var pingMongo = mongox.Ping
+
+var serveGRPC = func(server *grpc.Server, listener net.Listener) error { return server.Serve(listener) }
+var beginShutdown = func(server *grpc.Server, log *zap.Logger) { go shutdownOnSignal(server, log) }
+
 func main() {
-	// 加载服务身份、数据库和日志配置。
-	if err := config.InitGlobal("configs/config.yaml"); err != nil {
+	if err := run("configs/config.yaml"); err != nil {
 		panic(err)
+	}
+}
+
+func run(configPath string) error {
+	// 加载服务身份、数据库和日志配置。
+	if err := config.InitGlobal(configPath); err != nil {
+		return err
 	}
 	cfg := config.MustGlobal()
 	cfg.Log.Service = cfg.ServiceName("note")
@@ -33,7 +46,7 @@ func main() {
 
 	log, err := logger.New(cfg.Log)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer log.Sync()
 	config.PrintSourceNotice(cfg, os.Stdout)
@@ -41,12 +54,12 @@ func main() {
 	//  1. 实例化mongodb
 	mongoClient, err := mongox.NewClient(cfg.MongoDB.MongoxConfig())
 	if err != nil {
-		log.Fatal("create mongodb client failed", zap.Error(err))
+		return fmt.Errorf("create mongodb client failed"+": %w", err)
 	}
 	defer disconnectMongo(mongoClient, log)
 	// 2. 测试是否能调通
-	if err := mongox.Ping(context.Background(), mongoClient); err != nil {
-		log.Fatal("ping mongodb failed", zap.Error(err))
+	if err := pingMongo(context.Background(), mongoClient); err != nil {
+		return fmt.Errorf("ping mongodb failed"+": %w", err)
 	}
 	// 3. 设置mongodb要操作的数据库
 	mongoDB := mongox.Database(mongoClient, cfg.MongoDB.Database)
@@ -58,16 +71,17 @@ func main() {
 	notev1.RegisterNoteServiceServer(server, notehandler.NewServer(svc, log))
 
 	addr := fmt.Sprintf("%s:%d", cfg.GRPC.Host, cfg.ServicePort("note", 9002))
-	listener, err := net.Listen("tcp", addr)
+	listener, err := listenTCP("tcp", addr)
 	if err != nil {
-		log.Fatal("listen failed", zap.String("addr", addr), zap.Error(err))
+		return fmt.Errorf("listen failed"+": %w", err)
 	}
 
-	go shutdownOnSignal(server, log)
+	beginShutdown(server, log)
 	log.Info("note service listening", zap.String("addr", addr))
-	if err := server.Serve(listener); err != nil {
-		log.Fatal("note service stopped unexpectedly", zap.Error(err))
+	if err := serveGRPC(server, listener); err != nil {
+		return fmt.Errorf("note service stopped unexpectedly"+": %w", err)
 	}
+	return nil
 }
 
 func disconnectMongo(client interface {
@@ -82,7 +96,8 @@ func disconnectMongo(client interface {
 
 func shutdownOnSignal(server *grpc.Server, log *zap.Logger) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	notifySignals(ch, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(ch)
 	<-ch
 	log.Info("note service shutting down")
 	server.GracefulStop()

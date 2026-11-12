@@ -66,3 +66,31 @@ func TestParseDesignerOptionsDefaultsToLocalhost(t *testing.T) {
 	require.NotEmpty(t, opts.RootDir)
 	require.Equal(t, "127.0.0.1:6060", opts.Addr)
 }
+
+func TestParseDeleteOptionsAndSplitTargetErrors(t *testing.T) {
+	opts, err := parseDeleteServiceOptions([]string{"order", "--dir", ".", "--skip-proto", "--tidy"})
+	require.NoError(t, err)
+	require.Equal(t, "order", opts.Name)
+	require.False(t, opts.RunProto)
+	require.True(t, opts.RunTidy)
+	_, err = parseDeleteServiceOptions([]string{"--dir", "."})
+	require.Error(t, err)
+	_, err = parseGenerateOptions([]string{"--module", "x"}, false)
+	require.Error(t, err)
+	_, err = parseServiceOptions([]string{"--port", "bad"})
+	require.Error(t, err)
+	_, err = parseDesignerOptions([]string{"--addr"})
+	require.Error(t, err)
+	a, b := splitTargetArg([]string{"--flag"})
+	require.Empty(t, a)
+	require.Equal(t, []string{"--flag"}, b)
+	a, b = splitTargetArg(nil)
+	require.Empty(t, a)
+	require.Empty(t, b)
+}
+func TestParseGenerateSourceClearsRepo(t *testing.T) {
+	opts, err := parseGenerateOptions([]string{"target", "--module", "x", "--source", "."}, false)
+	require.NoError(t, err)
+	require.Empty(t, opts.RepoURL)
+	require.NotEmpty(t, opts.SourceDir)
+}

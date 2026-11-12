@@ -1,0 +1,73 @@
+	github.com/BwCloudWeGo/bw-cli/api/gen/note/v1		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/api/gen/order/v1		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/api/gen/payment/v1		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/api/gen/product/v1		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/api/gen/user/v1		coverage: 0.0% of statements
+	github.com/BwCloudWeGo/bw-cli/api/gen/warehouse/v1		coverage: 0.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/bw-cli	3.845s	coverage: 54.5% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/gateway	3.696s	coverage: 71.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/note	1.193s	coverage: 58.5% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/order	2.004s	coverage: 73.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/payment	1.832s	coverage: 84.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/product	3.619s	coverage: 83.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/user	3.434s	coverage: 83.6% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/warehouse	3.616s	coverage: 72.4% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/client	(cached)	coverage: 60.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/handler	1.050s	coverage: 97.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/request	(cached)	coverage: [no statements]
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/router	4.463s	coverage: 93.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/dto	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/entity	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/handler	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/model	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/repo	(cached)	coverage: 94.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/note/service	(cached)	coverage: 91.3% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/dto	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/entity	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/handler	1.524s	coverage: 93.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/model	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/repo	(cached)	coverage: 89.3% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	(cached)	coverage: 86.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/entity	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/handler	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/model	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/repo	(cached)	coverage: 91.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/service	(cached)	coverage: 86.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/dto	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/entity	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/handler	1.257s	coverage: 86.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/model	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/repo	(cached)	coverage: 87.3% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/service	(cached)	coverage: 92.1% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/dto	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/entity	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/handler	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/model	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/repo	(cached)	coverage: 95.3% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/user/service	(cached)	coverage: 96.6% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/handler	(cached)	coverage: 92.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/service	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/alipayx	(cached)	coverage: 14.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/config	(cached)	coverage: 87.6% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/database	3.775s	coverage: 76.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/errors	12.808s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/esx	(cached)	coverage: 82.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/filex	1.376s	coverage: 83.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/grpcx	0.733s	coverage: 97.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/httpx	(cached)	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/kafkax	14.158s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/logger	(cached)	coverage: 81.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/middleware	(cached)	coverage: 90.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/mongox	(cached)	coverage: 88.5% of statements
+	github.com/BwCloudWeGo/bw-cli/pkg/mysqlx		coverage: 0.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/nacosx	(cached)	coverage: 68.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/observability	6.672s	coverage: 100.0% of statements
+	github.com/BwCloudWeGo/bw-cli/pkg/postgresx		coverage: 0.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/redisx	(cached)	coverage: 44.4% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/rocketmqx	7.640s	coverage: 79.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/scaffold	7.576s	coverage: 54.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/timex	6.996s	coverage: 97.6% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/pkg/validator	4.743s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/tools/coveragegate	(cached)	coverage: 98.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/tools/protogen	(cached)	coverage: 55.1% of statements
+	github.com/BwCloudWeGo/bw-cli/tools/snowFlake		coverage: 0.0% of statements

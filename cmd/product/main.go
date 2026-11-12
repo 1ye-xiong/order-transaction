@@ -53,9 +53,21 @@ func seedProducts(ctx context.Context, svc *productservice.Service, log *zap.Log
 	}
 }
 
+var notifySignals = signal.Notify
+var listenTCP = net.Listen
+
+var serveGRPC = func(server *grpc.Server, listener net.Listener) error { return server.Serve(listener) }
+var beginShutdown = func(server *grpc.Server, log *zap.Logger) { go shutdownOnSignal(server, log) }
+
 func main() {
-	if err := config.InitGlobal("configs/config.yaml"); err != nil {
+	if err := run("configs/config.yaml"); err != nil {
 		panic(err)
+	}
+}
+
+func run(configPath string) error {
+	if err := config.InitGlobal(configPath); err != nil {
+		return err
 	}
 	cfg := config.MustGlobal()
 	cfg.Log.Service = cfg.ServiceName("product")
@@ -63,17 +75,22 @@ func main() {
 
 	log, err := logger.New(cfg.Log)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer log.Sync()
 	config.PrintSourceNotice(cfg, os.Stdout)
 
 	db, err := database.Open(cfg.Database, cfg.MySQL, cfg.PostgreSQL, log)
 	if err != nil {
-		log.Fatal("open database failed", zap.Error(err))
+		return fmt.Errorf("open database failed"+": %w", err)
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
 	if err := productrepo.AutoMigrate(db); err != nil {
-		log.Fatal("migrate product database failed", zap.Error(err))
+		return fmt.Errorf("migrate product database failed"+": %w", err)
 	}
 
 	repo := productrepo.NewGormRepository(db, log)
@@ -85,21 +102,23 @@ func main() {
 
 	port := cfg.ServicePort("product", defaultGRPCPort)
 	addr := fmt.Sprintf("%s:%d", cfg.GRPC.Host, port)
-	listener, err := net.Listen("tcp", addr)
+	listener, err := listenTCP("tcp", addr)
 	if err != nil {
-		log.Fatal("listen failed", zap.String("addr", addr), zap.Error(err))
+		return fmt.Errorf("listen failed"+": %w", err)
 	}
 
-	go shutdownOnSignal(server, log)
+	beginShutdown(server, log)
 	log.Info("product service listening", zap.String("addr", addr))
-	if err := server.Serve(listener); err != nil {
-		log.Fatal("product service stopped unexpectedly", zap.Error(err))
+	if err := serveGRPC(server, listener); err != nil {
+		return fmt.Errorf("product service stopped unexpectedly"+": %w", err)
 	}
+	return nil
 }
 
 func shutdownOnSignal(server *grpc.Server, log *zap.Logger) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	notifySignals(ch, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(ch)
 	<-ch
 	log.Info("product service shutting down")
 	server.GracefulStop()

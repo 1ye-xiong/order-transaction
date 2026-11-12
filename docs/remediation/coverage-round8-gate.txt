@@ -1,0 +1,22 @@
+Overall (excluding generated api/gen only): 84.69%
+FAIL: coverage must reach 85% overall and in each core package
+github.com/BwCloudWeGo/bw-cli/internal/payment/handler: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/order/handler: 93.20%
+github.com/BwCloudWeGo/bw-cli/internal/order/service: 86.70%
+github.com/BwCloudWeGo/bw-cli/internal/order/model: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/payment/entity: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/order/entity: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/product/dto: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/product/handler: 86.79%
+github.com/BwCloudWeGo/bw-cli/internal/warehouse/service: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/warehouse/handler: 92.86%
+github.com/BwCloudWeGo/bw-cli/internal/product/entity: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/order/repo: 89.30%
+github.com/BwCloudWeGo/bw-cli/internal/payment/service: 86.75%
+github.com/BwCloudWeGo/bw-cli/internal/product/repo: 87.34%
+github.com/BwCloudWeGo/bw-cli/internal/payment/model: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/product/service: 92.11%
+github.com/BwCloudWeGo/bw-cli/internal/order/dto: 100.00%
+github.com/BwCloudWeGo/bw-cli/internal/payment/repo: 91.67%
+github.com/BwCloudWeGo/bw-cli/internal/product/model: 100.00%
+exit status 1

@@ -44,9 +44,21 @@ func (n *orderNotifier) SendPaymentNotify(ctx context.Context, req paymentservic
 	return err
 }
 
+var notifySignals = signal.Notify
+var listenTCP = net.Listen
+
+var serveGRPC = func(server *grpc.Server, listener net.Listener) error { return server.Serve(listener) }
+var beginShutdown = func(server *grpc.Server, log *zap.Logger) { go shutdownOnSignal(server, log) }
+
 func main() {
-	if err := config.InitGlobal("configs/config.yaml"); err != nil {
+	if err := run("configs/config.yaml"); err != nil {
 		panic(err)
+	}
+}
+
+func run(configPath string) error {
+	if err := config.InitGlobal(configPath); err != nil {
+		return err
 	}
 	cfg := config.MustGlobal()
 	cfg.Log.Service = cfg.ServiceName("payment")
@@ -54,23 +66,28 @@ func main() {
 
 	log, err := logger.New(cfg.Log)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer log.Sync()
 	config.PrintSourceNotice(cfg, os.Stdout)
 
 	db, err := database.Open(cfg.Database, cfg.MySQL, cfg.PostgreSQL, log)
 	if err != nil {
-		log.Fatal("open database failed", zap.Error(err))
+		return fmt.Errorf("open database failed"+": %w", err)
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	defer sqlDB.Close()
 	if err := paymentrepo.AutoMigrate(db); err != nil {
-		log.Fatal("migrate payment database failed", zap.Error(err))
+		return fmt.Errorf("migrate payment database failed"+": %w", err)
 	}
 
 	// 渠道需要把支付通知回传给订单服务。
 	orderConn, err := grpc.Dial(cfg.ServiceTarget("order"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatal("dial order service failed", zap.Error(err))
+		return fmt.Errorf("dial order service failed"+": %w", err)
 	}
 	defer orderConn.Close()
 
@@ -82,21 +99,23 @@ func main() {
 
 	port := cfg.ServicePort("payment", defaultGRPCPort)
 	addr := fmt.Sprintf("%s:%d", cfg.GRPC.Host, port)
-	listener, err := net.Listen("tcp", addr)
+	listener, err := listenTCP("tcp", addr)
 	if err != nil {
-		log.Fatal("listen failed", zap.String("addr", addr), zap.Error(err))
+		return fmt.Errorf("listen failed"+": %w", err)
 	}
 
-	go shutdownOnSignal(server, log)
+	beginShutdown(server, log)
 	log.Info("payment service listening", zap.String("addr", addr))
-	if err := server.Serve(listener); err != nil {
-		log.Fatal("payment service stopped unexpectedly", zap.Error(err))
+	if err := serveGRPC(server, listener); err != nil {
+		return fmt.Errorf("payment service stopped unexpectedly"+": %w", err)
 	}
+	return nil
 }
 
 func shutdownOnSignal(server *grpc.Server, log *zap.Logger) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	notifySignals(ch, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(ch)
 	<-ch
 	log.Info("payment service shutting down")
 	server.GracefulStop()

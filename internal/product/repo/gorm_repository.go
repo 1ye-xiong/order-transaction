@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/BwCloudWeGo/bw-cli/internal/product/dto"
 	"github.com/BwCloudWeGo/bw-cli/internal/product/entity"
 	dbmodel "github.com/BwCloudWeGo/bw-cli/internal/product/model"
 )
@@ -18,6 +19,51 @@ import (
 type GormRepository struct {
 	db  *gorm.DB
 	log *zap.Logger
+}
+
+// UpdateAtomic applies an operator update while holding the database write
+// transaction. It never writes a stale full aggregate, so a concurrent stock
+// reservation cannot be overwritten by a price or sale-status change.
+func (r *GormRepository) UpdateAtomic(ctx context.Context, cmd dto.UpdateCommand) (*entity.Product, error) {
+	var product *entity.Product
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var row dbmodel.ProductModel
+		if err := tx.Where("id = ?", cmd.ID).First(&row).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return entity.ErrProductNotFound
+			}
+			return err
+		}
+		if cmd.SetPrice {
+			if cmd.PriceCents <= 0 {
+				return entity.ErrInvalidProduct
+			}
+			if err := tx.Model(&dbmodel.ProductModel{}).Where("id = ?", cmd.ID).Update("price_cents", cmd.PriceCents).Error; err != nil {
+				return err
+			}
+		}
+		if cmd.SetOnSale {
+			if err := tx.Model(&dbmodel.ProductModel{}).Where("id = ?", cmd.ID).Update("on_sale", cmd.OnSale).Error; err != nil {
+				return err
+			}
+		}
+		if cmd.StockDelta != 0 {
+			if cmd.StockDelta < 0 {
+				return entity.ErrInvalidProduct
+			}
+			q := tx.Model(&dbmodel.ProductModel{}).Where("id = ?", cmd.ID).UpdateColumn("stock_total", gorm.Expr("stock_total + ?", cmd.StockDelta))
+			if q.Error != nil {
+				return q.Error
+			}
+		}
+		var updated dbmodel.ProductModel
+		if err := tx.Where("id = ?", cmd.ID).First(&updated).Error; err != nil {
+			return err
+		}
+		product = toProductDomain(&updated)
+		return nil
+	})
+	return product, err
 }
 
 func NewGormRepository(db *gorm.DB, loggers ...*zap.Logger) *GormRepository {
