@@ -1,0 +1,1 @@
+PASS health, React assets, login, products, owned orders, host LAN-address access. Remote device not tested.

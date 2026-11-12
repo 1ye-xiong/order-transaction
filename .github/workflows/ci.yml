@@ -14,10 +14,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: 前端类型检查与构建
+        working-directory: web/frontend
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.2.0 --activate
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm exec tsc --noEmit
+          pnpm test
+          pnpm build
       - name: gofmt 检查
         run: test -z "$(gofmt -l ./cmd ./internal ./pkg ./tools)" || (gofmt -l ./cmd ./internal ./pkg ./tools && exit 1)
+      - name: 完整HTTP集成与持久化验收（隔离数据）
+        run: python3 tools/audit_e2e.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: acceptance-${{ github.sha }}
+          path: docs/remediation/e2e*
       - name: go vet
         run: go vet ./...
       - name: 单元测试（含竞态检测）
@@ -31,18 +50,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           cache: true
-      - name: 整体覆盖率
+      - name: 整体及逐核心包覆盖率（仅排除生成代码）
         run: |
           go test ./... -race -coverprofile=coverage.out -covermode=atomic
-          go tool cover -func=coverage.out | tail -1
-      - name: 核心业务包覆盖率
-        run: |
-          go test ./internal/order/... ./internal/product/... ./internal/payment/... ./internal/warehouse/... -race -coverprofile=coverage-core.out -covermode=atomic
-          total=$(go tool cover -func=coverage-core.out | tail -1 | awk '{print substr($3, 1, length($3)-1)}')
-          echo "核心包覆盖率: ${total}%"
-          awk -v t="$total" 'BEGIN { if (t+0 < 85) { print "覆盖率门禁未达标"; exit 1 } }'
+          go run ./tools/coveragegate coverage.out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage.out
 
   build:
     name: 构建
@@ -52,13 +70,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version: "1.25"
           cache: true
       - name: 构建
         run: go build ./...
 
   deploy:
-    name: 部署 + 健康检查 + 冒烟
+    name: 临时容器预览 + 健康检查 + 冒烟
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main'
@@ -76,5 +94,6 @@ jobs:
           echo 健康检查超时; exit 1
       - name: 冒烟测试
         run: bash deploy/smoke.sh
-      - name: 回滚方案说明
-        run: echo 部署失败或冒烟不通过时执行 docker compose -f deploy/docker-compose.yml down 并回退到上一个通过镜像
+      - name: 撤销临时预览（保留数据卷）
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml down

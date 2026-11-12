@@ -1,0 +1,1 @@
+PASS: login envelope, authenticated product load/create, channel DOM load/save

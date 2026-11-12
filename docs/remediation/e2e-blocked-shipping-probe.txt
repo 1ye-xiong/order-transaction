@@ -1,0 +1,18 @@
+Acceptance time 2026-11-12T15:31:45.392715+08:00
+Source HEAD f2b20529e3ab908b3b4af61ef2abf0c1f3e98791 plus uncommitted worktree changes (not an exact commit release).
+Built six services. Isolated runtime: C:\Users\35795\AppData\Local\Temp\trade-acceptance-1c_jrp5e
+All six services started; six teaching accounts authenticated.
+Seed: exactly two products; three buyers and three staff authenticated. Teaching expiry explicitly shortened to 3 seconds.
+PASS S1: real HTTP create/pay (3 repeated notifications)/ship/buyer tracking/ops stock and records. order=ORD1794468745392ac1cdf48be
+PASS S2: 20 HTTP requests / 5 successful / 15 rejected; cancel 2 twice, then 2 other purchases; no oversell.
+Traceback (most recent call last):
+  File "C:\Users\35795\Desktop\order-transaction\tools\audit_e2e.py", line 177, in main
+    try:h.prepare(); h.start(); h.run(); ok=True
+                                ~~~~~^^
+  File "C:\Users\35795\Desktop\order-transaction\tools\audit_e2e.py", line 123, in run
+    code,data=self.ship(o,True); assert code>=400 or not data.get('success',True),(code,data)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (200, {'message': 'rpc error: code = FailedPrecondition desc = order_conflict|refund requested: shipping paused'})
+
+Runtime logs retained at C:\Users\35795\AppData\Local\Temp\trade-acceptance-1c_jrp5e
+RESULT FAIL

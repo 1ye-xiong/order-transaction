@@ -99,31 +99,50 @@ func TestRefundHandler(t *testing.T) {
 	if _, err := s.SetChannelConfig(ctx, &paymentv1.SetChannelConfigRequest{PayBehavior: entity.PayBehaviorNoNotify, RefundSuccessFromAttempt: 2}); err != nil {
 		t.Fatalf("set config: %v", err)
 	}
+	paid, err := s.Pay(ctx, &paymentv1.PayRequest{OrderNo: "O-REFUND", BuyerId: "buyer1", AmountCents: 10000})
+	if err != nil || !paid.Accepted {
+		t.Fatalf("original payment: %v / %+v", err, paid)
+	}
 
-	first, err := s.Refund(ctx, &paymentv1.RefundRequest{RefundNo: "R-1", ChannelTradeNo: "CH-1", AmountCents: 10000, Reason: "user"})
+	first, err := s.Refund(ctx, &paymentv1.RefundRequest{RefundNo: "R-1", ChannelTradeNo: paid.ChannelTradeNo, AmountCents: 10000, Reason: "user"})
 	if err != nil {
 		t.Fatalf("refund 1: %v", err)
 	}
-	if first.Success || !strings.Contains(first.Message, "attempt 1") {
+	if first.Success || first.Message == "" {
 		t.Fatalf("首次退款应失败: %+v", first)
 	}
 
-	second, err := s.Refund(ctx, &paymentv1.RefundRequest{RefundNo: "R-1", ChannelTradeNo: "CH-1", AmountCents: 10000, Reason: "user"})
+	second, err := s.Refund(ctx, &paymentv1.RefundRequest{RefundNo: "R-1", ChannelTradeNo: paid.ChannelTradeNo, AmountCents: 10000, Reason: "user"})
 	if err != nil {
 		t.Fatalf("refund 2: %v", err)
 	}
-	if !second.Success || !strings.Contains(second.Message, "attempt 2") {
+	if !second.Success || second.Message == "" {
 		t.Fatalf("第二次退款应成功: %+v", second)
+	}
+	records, err := s.ListChannelRecords(ctx, &paymentv1.ListChannelRecordsRequest{})
+	if err != nil || len(records.Items) != 3 {
+		t.Fatalf("payment plus two refund attempts required: %v / %+v", err, records)
+	}
+	var failed, succeeded bool
+	for _, item := range records.Items {
+		if item.Type == entity.RecordTypeRefund {
+			failed = failed || (item.Attempts == 1 && item.Result == "failed")
+			succeeded = succeeded || (item.Attempts == 2 && item.Result == "success")
+		}
+	}
+	if !failed || !succeeded {
+		t.Fatalf("expected failed attempt 1 and successful attempt 2: %+v", records)
 	}
 }
 
 func TestListChannelRecords(t *testing.T) {
 	s := newTestServer(t)
 	ctx := context.Background()
-	if _, err := s.Pay(ctx, &paymentv1.PayRequest{OrderNo: "O-1", BuyerId: "buyer1", AmountCents: 10000}); err != nil {
+	paid, err := s.Pay(ctx, &paymentv1.PayRequest{OrderNo: "O-1", BuyerId: "buyer1", AmountCents: 10000})
+	if err != nil {
 		t.Fatalf("pay: %v", err)
 	}
-	if _, err := s.Refund(ctx, &paymentv1.RefundRequest{RefundNo: "R-1", ChannelTradeNo: "CH-1", AmountCents: 10000, Reason: "user"}); err != nil {
+	if refunded, err := s.Refund(ctx, &paymentv1.RefundRequest{RefundNo: "R-1", ChannelTradeNo: paid.ChannelTradeNo, AmountCents: 10000, Reason: "user"}); err != nil || !refunded.Success {
 		t.Fatalf("refund: %v", err)
 	}
 

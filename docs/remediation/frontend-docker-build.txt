@@ -1,0 +1,130 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.25kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:24-alpine
+#2 DONE 0.8s
+
+#3 [frontend 1/7] FROM docker.io/library/node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
+#3 resolve docker.io/library/node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 0.1s done
+#3 sha256:7bb632bc9bd793a348866a7dd7920cf89dfc87205c6d38cda182ea6d8065b8e5 442B / 442B 0.9s done
+#3 sha256:7eb569707982863466c2b0bcfddda86fb4842fccfaec088d1354f6a29e2856bb 1.26MB / 1.26MB 11.6s done
+#3 sha256:86781d25d3989ead8f09c45716da0159c1dd0be2c753a51f15b6c60f4b9a97db 57.42MB / 57.42MB 277.7s done
+#3 extracting sha256:86781d25d3989ead8f09c45716da0159c1dd0be2c753a51f15b6c60f4b9a97db 2.2s done
+#3 extracting sha256:7eb569707982863466c2b0bcfddda86fb4842fccfaec088d1354f6a29e2856bb 0.1s done
+#3 extracting sha256:7bb632bc9bd793a348866a7dd7920cf89dfc87205c6d38cda182ea6d8065b8e5 0.0s done
+#3 DONE 280.4s
+
+#4 [frontend 2/7] WORKDIR /src/web/frontend
+#4 DONE 0.2s
+
+#5 [frontend 3/7] RUN corepack enable && corepack prepare pnpm@10.2.0 --activate
+#5 0.689 Preparing pnpm@10.2.0 for immediate activation...
+#5 DONE 24.7s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 90B done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 100.13kB 0.0s done
+#7 DONE 0.0s
+
+#8 [frontend 4/7] COPY web/frontend/package.json web/frontend/pnpm-lock.yaml ./
+#8 DONE 0.3s
+
+#9 [frontend 5/7] RUN pnpm install --frozen-lockfile --ignore-scripts
+#9 0.714 (node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+#9 0.714 (Use `node --trace-deprecation ...` to show where the warning was created)
+#9 0.761 Lockfile is up to date, resolution step is skipped
+#9 0.788 Progress: resolved 1, reused 0, downloaded 0, added 0
+#9 0.852 Packages: +47
+#9 0.852 +++++++++++++++++++++++++++++++++++++++++++++++
+#9 1.789 Progress: resolved 47, reused 0, downloaded 2, added 2
+#9 2.789 Progress: resolved 47, reused 0, downloaded 19, added 19
+#9 3.790 Progress: resolved 47, reused 0, downloaded 26, added 26
+#9 4.791 Progress: resolved 47, reused 0, downloaded 27, added 27
+#9 5.792 Progress: resolved 47, reused 0, downloaded 31, added 31
+#9 7.171 Progress: resolved 47, reused 0, downloaded 32, added 31
+#9 8.172 Progress: resolved 47, reused 0, downloaded 33, added 33
+#9 9.173 Progress: resolved 47, reused 0, downloaded 34, added 34
+#9 12.90 Progress: resolved 47, reused 0, downloaded 35, added 34
+#9 13.91 Progress: resolved 47, reused 0, downloaded 35, added 35
+#9 14.91 Progress: resolved 47, reused 0, downloaded 36, added 36
+#9 15.91 Progress: resolved 47, reused 0, downloaded 37, added 37
+#9 18.83 
+#9 18.83    ╭───────────────────────────────────────────────────────────────────╮
+#9 18.83    │                                                                   │
+#9 18.83    │                Update available! 10.2.0 → 12.18.0.                │
+#9 18.83    │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v12.18.0   │
+#9 18.83    │         Run "corepack install -g pnpm@12.18.0" to update.         │
+#9 18.83    │                                                                   │
+#9 18.83    ╰───────────────────────────────────────────────────────────────────╯
+#9 18.83 
+#9 29.34 Progress: resolved 47, reused 0, downloaded 38, added 37
+#9 30.34 Progress: resolved 47, reused 0, downloaded 39, added 39
+#9 31.71 Progress: resolved 47, reused 0, downloaded 40, added 39
+#9 32.71 Progress: resolved 47, reused 0, downloaded 40, added 40
+#9 44.29 Progress: resolved 47, reused 0, downloaded 41, added 40
+#9 45.29 Progress: resolved 47, reused 0, downloaded 41, added 41
+#9 62.70 Progress: resolved 47, reused 0, downloaded 42, added 41
+#9 63.70 Progress: resolved 47, reused 0, downloaded 43, added 43
+#9 64.70 Progress: resolved 47, reused 0, downloaded 44, added 44
+#9 66.48 Progress: resolved 47, reused 0, downloaded 45, added 44
+#9 67.48 Progress: resolved 47, reused 0, downloaded 45, added 45
+#9 91.05 Progress: resolved 47, reused 0, downloaded 46, added 45
+#9 91.59 Progress: resolved 47, reused 0, downloaded 47, added 47, done
+#9 91.64 
+#9 91.64 dependencies:
+#9 91.64 + react 19.2.4
+#9 91.64 + react-dom 19.2.4
+#9 91.64 
+#9 91.64 devDependencies:
+#9 91.64 + @tailwindcss/vite 4.2.2
+#9 91.64 + @types/node 22.19.17
+#9 91.64 + @types/react 19.2.14
+#9 91.64 + @types/react-dom 19.2.3
+#9 91.64 + @vitejs/plugin-react 6.0.1
+#9 91.64 + oxfmt 0.76.0
+#9 91.64 + tailwindcss 4.2.2
+#9 91.64 + typescript 5.9.3
+#9 91.64 + vite 8.0.5
+#9 91.64 
+#9 91.64 Done in 1m 31.3s
+#9 DONE 92.0s
+
+#10 [frontend 6/7] COPY web/frontend/ ./
+#10 DONE 0.1s
+
+#11 [frontend 7/7] RUN pnpm exec tsc --noEmit && pnpm build
+#11 2.518 
+#11 2.518 > figma-make-app@1.0.0 build /src/web/frontend
+#11 2.518 > vite build
+#11 2.518 
+#11 2.862 vite v8.0.5 building client environment for production...
+#11 2.878 [2K
+transforming...✓ 17 modules transformed.
+#11 3.109 rendering chunks...
+#11 3.165 computing gzip size...
+#11 3.171 ../dist/index.html                   0.37 kB │ gzip:  0.30 kB
+#11 3.171 ../dist/assets/index-rxN9xOh8.css   22.81 kB │ gzip:  6.21 kB
+#11 3.171 ../dist/assets/index-B4HXtLM6.js   211.49 kB │ gzip: 66.92 kB
+#11 3.171 
+#11 3.172 ✓ built in 307ms
+#11 DONE 3.2s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 4.9s done
+#12 exporting manifest sha256:98b88de56bb4bbb789d10d11e534aa8692116184f5f7d5caedadaaa34031bc1f 0.0s done
+#12 exporting config sha256:bb14508537d00dc2381af5ec6709041a9f9e13396af55acf7edb7e8905adc158 0.0s done
+#12 exporting attestation manifest sha256:3431218201edc71772fbc94eb4ce3b870b7970c6d5e7f7c43e5e7517cbb26c2d 0.0s done
+#12 exporting manifest list sha256:14bd9983be0c29a3d656325f29864ccbc9967f36eeb03bcbf2018c8d5b04f20c 0.0s done
+#12 naming to docker.io/library/order-transaction:frontend-only done
+#12 unpacking to docker.io/library/order-transaction:frontend-only
+#12 unpacking to docker.io/library/order-transaction:frontend-only 1.7s done
+#12 DONE 6.8s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/u4hi9cl7q3b9v6mssvrhv9jcw

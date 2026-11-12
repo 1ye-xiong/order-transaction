@@ -1,0 +1,103 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.32kB 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:24-alpine
+#2 DONE 0.8s
+
+#3 [internal] load metadata for docker.io/library/golang:1.25-alpine
+#3 DONE 0.8s
+
+#4 [internal] load metadata for docker.io/library/alpine:3.20
+#4 DONE 1.1s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 90B done
+#5 DONE 0.0s
+
+#6 [frontend 1/7] FROM docker.io/library/node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5
+#6 resolve docker.io/library/node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 0.0s done
+#6 DONE 0.0s
+
+#7 [stage-2 1/7] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#7 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.0s done
+#7 DONE 0.0s
+
+#8 [build 1/6] FROM docker.io/library/golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59
+#8 resolve docker.io/library/golang:1.25-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59 0.0s done
+#8 DONE 0.0s
+
+#9 [internal] load build context
+#9 transferring context: 151.38kB 0.0s done
+#9 DONE 0.1s
+
+#10 [frontend 2/7] WORKDIR /src/web/frontend
+#10 CACHED
+
+#11 [frontend 5/7] RUN pnpm install --frozen-lockfile --ignore-scripts
+#11 CACHED
+
+#12 [frontend 3/7] RUN corepack enable && corepack prepare pnpm@10.2.0 --activate
+#12 CACHED
+
+#13 [frontend 6/7] COPY web/frontend/ ./
+#13 CACHED
+
+#14 [frontend 4/7] COPY web/frontend/package.json web/frontend/pnpm-lock.yaml ./
+#14 CACHED
+
+#15 [frontend 7/7] RUN pnpm exec tsc --noEmit && pnpm build
+#15 CACHED
+
+#16 [build 2/6] WORKDIR /src
+#16 CACHED
+
+#17 [build 3/6] COPY go.mod go.sum ./
+#17 CACHED
+
+#18 [build 4/6] RUN go mod download
+#18 DONE 164.2s
+
+#19 [build 5/6] COPY . .
+#19 DONE 1.3s
+
+#20 [build 6/6] RUN CGO_ENABLED=0 go build -o /out/gateway ./cmd/gateway  && CGO_ENABLED=0 go build -o /out/user ./cmd/user  && CGO_ENABLED=0 go build -o /out/product ./cmd/product  && CGO_ENABLED=0 go build -o /out/order ./cmd/order  && CGO_ENABLED=0 go build -o /out/payment ./cmd/payment  && CGO_ENABLED=0 go build -o /out/warehouse ./cmd/warehouse
+#20 ...
+
+#21 [stage-2 2/7] WORKDIR /app
+#21 CACHED
+
+#22 [stage-2 3/7] RUN apk add --no-cache tzdata ca-certificates && adduser -D -u 10001 appuser  && mkdir -p /app/data /app/logs && chown -R appuser:appuser /app/data /app/logs
+#22 CACHED
+
+#20 [build 6/6] RUN CGO_ENABLED=0 go build -o /out/gateway ./cmd/gateway  && CGO_ENABLED=0 go build -o /out/user ./cmd/user  && CGO_ENABLED=0 go build -o /out/product ./cmd/product  && CGO_ENABLED=0 go build -o /out/order ./cmd/order  && CGO_ENABLED=0 go build -o /out/payment ./cmd/payment  && CGO_ENABLED=0 go build -o /out/warehouse ./cmd/warehouse
+#20 DONE 85.3s
+
+#23 [stage-2 4/7] COPY --from=build /out/ /app/
+#23 DONE 3.7s
+
+#24 [stage-2 5/7] COPY configs/ /app/configs/
+#24 DONE 0.1s
+
+#25 [stage-2 6/7] COPY web/index.html /app/web/index.html
+#25 DONE 0.1s
+
+#26 [stage-2 7/7] COPY --from=frontend /src/web/dist/ /app/web/dist/
+#26 DONE 0.1s
+
+#27 exporting to image
+#27 exporting layers
+#27 exporting layers 12.1s done
+#27 exporting manifest sha256:9e7a75a99420680ae92956ffaf878adf76f661ee83850fce145c78e9052401c9 0.0s done
+#27 exporting config sha256:de48b8cf87f75d817b3c79727ac63327fd717e7529c4494193ba9d176be12544 0.0s done
+#27 exporting attestation manifest sha256:991935659353fbca0d82106729949e9870bce0541fe168833aaac6c91625c93e 0.0s done
+#27 exporting manifest list sha256:88054506fce34e0098b41f45b0f43722fe4825a338dc56f227433668b0dcbae4 0.0s done
+#27 naming to docker.io/library/order-transaction:local-release
+#27 naming to docker.io/library/order-transaction:local-release 0.0s done
+#27 unpacking to docker.io/library/order-transaction:local-release
+#27 unpacking to docker.io/library/order-transaction:local-release 4.2s done
+#27 DONE 16.6s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/j1t1hrqzo3llbj7xw3vj7bgy3

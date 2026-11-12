@@ -79,6 +79,9 @@ func (s *Service) CloseExpiredOrders(ctx context.Context) (int, error) {
 			closed++
 		}
 	}
+	if err := s.reconcileStock(ctx); err != nil {
+		return closed, err
+	}
 	return closed, nil
 }
 
@@ -88,7 +91,7 @@ func (s *Service) closeExpired(ctx context.Context, orderNo string, now time.Tim
 		return false, err
 	}
 	// 超时关闭释放占用；重复关闭不多释放（条件更新天然幂等）
-	if err := s.stock.Release(ctx, orderNo); err != nil {
+	if err := s.syncStock(ctx, orderNo, "release"); err != nil {
 		return true, err
 	}
 	_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{

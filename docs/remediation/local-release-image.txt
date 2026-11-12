@@ -1,0 +1,68 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.local
+#1 transferring dockerfile: 572B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/order-transaction:frontend-only
+#3 DONE 0.5s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.20
+#2 DONE 1.4s
+
+#4 [stage-2 1/7] FROM docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
+#4 resolve docker.io/library/alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 90B 0.0s done
+#5 DONE 0.0s
+
+#6 [stage-2 2/7] WORKDIR /app
+#6 CACHED
+
+#7 [stage-2 3/7] RUN apk add --no-cache tzdata ca-certificates && adduser -D -u 10001 appuser  && mkdir -p /app/data /app/logs && chown -R appuser:appuser /app/data /app/logs
+#7 CACHED
+
+#8 [internal] load build context
+#8 ...
+
+#9 [frontend 1/1] FROM docker.io/library/order-transaction:frontend-only@sha256:14bd9983be0c29a3d656325f29864ccbc9967f36eeb03bcbf2018c8d5b04f20c
+#9 resolve docker.io/library/order-transaction:frontend-only@sha256:14bd9983be0c29a3d656325f29864ccbc9967f36eeb03bcbf2018c8d5b04f20c 0.1s done
+#9 DONE 0.2s
+
+#8 [internal] load build context
+#8 transferring context: 86.50MB 5.0s
+#8 transferring context: 195.84MB 10.1s
+#8 transferring context: 308.53MB 15.1s
+#8 transferring context: 370.10MB 17.8s done
+#8 DONE 17.8s
+
+#10 [stage-1 4/7] COPY deploy/local-bin/ /app/
+#10 DONE 4.2s
+
+#11 [stage-1 5/7] COPY configs/ /app/configs/
+#11 DONE 0.3s
+
+#12 [stage-1 6/7] COPY web/index.html /app/web/index.html
+#12 DONE 0.1s
+
+#13 [stage-1 7/7] COPY --from=frontend /src/web/dist/ /app/web/dist/
+#13 DONE 0.4s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 14.3s done
+#14 exporting manifest sha256:6b15da587980e52c296ca6af542bb5fabbb3b112ff960ade11dc784619088734 0.0s done
+#14 exporting config sha256:09e5c6251f357c51b3ac3ea14e1b59d73640b2cda89497a780c73ecbe70ec18c 0.0s done
+#14 exporting attestation manifest sha256:d529197be357be3963ecdce711fda536c5d7bf1cdffcfa48ece0a2de483dce90 0.0s done
+#14 exporting manifest list sha256:030c015c28f9b999e879c88b2ea379dfd29229244fdc6b9dc1837752d933cf55 0.0s done
+#14 naming to docker.io/library/order-transaction:local-release done
+#14 unpacking to docker.io/library/order-transaction:local-release
+#14 unpacking to docker.io/library/order-transaction:local-release 2.9s done
+#14 DONE 17.4s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/73qwxk2pr3ms3yh2jhm0rcq2b

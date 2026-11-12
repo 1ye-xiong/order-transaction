@@ -55,7 +55,7 @@ func FromOrder(order *entity.Order) *OrderDTO {
 		ClosedAt:         formatTime(order.ClosedAt),
 		RefundFailReason: order.RefundFailReason,
 		RefundedAt:       formatTime(order.RefundedAt),
-		PayExpireAt:      order.PayExpireAt.Format("2006-01-02 15:04:05"),
+		PayExpireAt:      order.PayExpireAt.Format(time.RFC3339),
 		CreatedAt:        order.CreatedAt.Format("2006-01-02 15:04:05"),
 	}
 }

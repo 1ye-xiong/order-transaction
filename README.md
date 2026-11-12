@@ -1,3 +1,30 @@
+# 题目01：订单交易、发货与售前退款
+
+本次整改针对 `叶雄-题目01-检查报告.md`，基线提交 f2b20529e3ab908b3b4af61ef2abf0c1f3e98791。
+修复说明和真实验证见 [整改报告](docs/remediation/REPORT.md)。原脚手架说明保留在下方。
+
+## 运行
+
+要求 Go 1.25+；本地运行六个终端，分别执行 `go run ./cmd/user`、`go run ./cmd/product`、`go run ./cmd/order`、`go run ./cmd/payment`、`go run ./cmd/warehouse`、`go run ./cmd/gateway`。访问 http://127.0.0.1:8080 。默认 SQLite 文件 `data/order-transaction.db`，启动自动迁移、幂等初始化演示账号与两商品。重启保留业务结果。无需运行原脚手架 note/Redis/Mongo/MySQL。
+
+预置账号：buyer1/buyer2/buyer3、ops01、warehouse01、cs01，教学密码均为123456。正式教学环境需要替换配置中的教学密钥。服务间端口仅限可信内部网络；容器仅映射网关8080。
+
+容器预览：`docker compose -f deploy/docker-compose.yml up -d --build --wait`。配置使用容器专用服务名，数据位于独立 dbdata 卷。撤销启动用 `docker compose -f deploy/docker-compose.yml down`，保留数据卷；不要使用 `down -v` 清除历史业务。正式发布必须由指定教学目标的流水线执行，并记录实际提交/制品/地址；当前CI容器运行只是临时预览，不能冒称教学上线。
+
+## 验证
+
+- `go test ./... -count=1 -coverprofile=coverage-new.out`
+- `go vet ./...`
+- `go run ./tools/coveragegate coverage-new.out`：整体及每个核心实际包均需85%，只排除 api/gen 自动生成代码；整体不足会真实失败。
+- `python tools/audit_e2e.py`：自动启动隔离六进程，执行HTTP五场景及重启验证；演示支付期限缩短为3秒，默认产品运行仍为10分钟。
+- `node tools/audit_ui.cjs`：页面脚本/响应解包与输入引用回归，不替代浏览器人工操作。
+
+## 来源边界
+
+模块路径和下方说明来自 BwCloudWeGo/bw-cli 脚手架；通用 pkg、note、工具等保留既有实现，不声称本题原创。题目交易实现位于 order/product/payment/warehouse、网关交易路由、六服务入口和web页面；仅文件归属不能证明历史作者或满足豁免覆盖率条件。本次未擅自从整体覆盖率中排除脚手架生产代码。
+
+---
+
 # bw-cli Go 微服务脚手架
 
 `bw-cli` 是一套面向企业项目的 Go 微服务脚手架，默认使用 Gin + gRPC + Gorm，按 DDD 思路组织代码，同时保持包名简单直观。`bw-cli new` 默认生成不带业务 demo 的干净框架；如果需要演示项目，可以使用 `bw-cli demo` 生成带 `user-service` 和 `note-service` 的示例工程。
@@ -843,3 +870,23 @@ make proto
 - [详细使用说明](docs/usage.md)：发布 `bw-cli`、安装命令、生成项目、初始化依赖、配置服务、启动验证和扩展业务。
 - [工具组件总览与调用流程](docs/toolkit.md)：配置、日志、中间件、数据库、MongoDB、Redis、ES、Kafka、文件上传等公共工具的调用方式。
 - [MongoDB 调用示例全流程](docs/mongo-call-examples.md)：配置、初始化、repo 封装、note/order/audit 多服务调用示例和测试方式。
+
+
+## React 交易工作台（本次提供的 Figma 源码）
+
+源码在 `web/frontend`，已接真实 `/api/v1` 接口。角色由登录账号决定，切换角色需退出并登录对应账号；不再使用原型中的模拟身份和虚构订单。教学账号初始密码 `123456`。
+
+本地先构建页面（Node 24、pnpm 10.2）：
+
+```powershell
+cd web/frontend
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm exec tsc --noEmit
+pnpm build
+```
+
+随后从项目根目录按原有方式启动六个 Go 服务，访问网关地址。网关优先读取 `web/dist`，未构建时回退到原教学页面；`/legacy` 可打开旧页面。开发前端可执行 `pnpm dev`，默认代理到 `http://127.0.0.1:8080`；后端端口不同则设置 `API_TARGET`。Docker 构建自动生成前端资源。
+
+买家支持下单、付款、取消、售前退款及物流查看；仓库登记待发货订单；客服审核、重试及处理迟到支付；运营查看汇总、上下架、整数分调价、补货、订单流水及模拟渠道配置。当前仓库接口只提供待发货列表，历史发货由运营按订单流水核查。金额以整数分传输，异步支付和退款以服务端状态为准。
+
+原 Figma 发布链接仍为原型；本地源码修复不自动更新该远端站点。实际发布前仍需满足覆盖率及项目其他门禁，不能据此前端接入声称已达 7 分。

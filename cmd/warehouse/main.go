@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 
 	orderv1 "github.com/BwCloudWeGo/bw-cli/api/gen/order/v1"
 	warehousev1 "github.com/BwCloudWeGo/bw-cli/api/gen/warehouse/v1"
@@ -30,7 +31,7 @@ type orderGateway struct {
 }
 
 func (g *orderGateway) ListShippable(ctx context.Context) ([]warehouseservice.ShippableOrder, error) {
-	resp, err := g.client.ListShippableOrders(ctx, &orderv1.ListShippableOrdersRequest{})
+	resp, err := g.client.ListShippableOrders(forwardIdentity(ctx), &orderv1.ListShippableOrdersRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func (g *orderGateway) ListShippable(ctx context.Context) ([]warehouseservice.Sh
 }
 
 func (g *orderGateway) Ship(ctx context.Context, orderNo string, carrier string, trackingNo string, operator string) error {
-	resp, err := g.client.ShipOrder(ctx, &orderv1.ShipOrderRequest{OrderNo: orderNo, Carrier: carrier, TrackingNo: trackingNo})
+	resp, err := g.client.ShipOrder(forwardIdentity(ctx), &orderv1.ShipOrderRequest{OrderNo: orderNo, Carrier: carrier, TrackingNo: trackingNo})
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -102,4 +103,10 @@ func shutdownOnSignal(server *grpc.Server, log *zap.Logger) {
 	<-ch
 	log.Info("warehouse service shutting down")
 	server.GracefulStop()
+}
+
+// Only forward known identity fields from the trusted internal hop.
+func forwardIdentity(ctx context.Context) context.Context {
+	user, role := grpcx.IdentityFromContext(ctx)
+	return metadata.AppendToOutgoingContext(ctx, grpcx.MetadataUserID, user, grpcx.MetadataUserRole, role, grpcx.MetadataRequestID, grpcx.RequestIDFromContext(ctx))
 }

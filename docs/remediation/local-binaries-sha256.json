@@ -1,0 +1,26 @@
+[
+  {
+    "Path": "C:\\Users\\35795\\Desktop\\order-transaction\\deploy\\local-bin\\gateway",
+    "Hash": "FA24D23B1197177078DC528C06AEA55836998975E9FF4CEB11425D6A630B27C9"
+  },
+  {
+    "Path": "C:\\Users\\35795\\Desktop\\order-transaction\\deploy\\local-bin\\order",
+    "Hash": "0B4B244CE3531FC638EB386A34D6EFFE6696C93C318F72DA455586BB9191EE9A"
+  },
+  {
+    "Path": "C:\\Users\\35795\\Desktop\\order-transaction\\deploy\\local-bin\\payment",
+    "Hash": "939552A6E07DDC516820F24FC4B446A8762AA979B904C77EA10EEA0014DAB2BB"
+  },
+  {
+    "Path": "C:\\Users\\35795\\Desktop\\order-transaction\\deploy\\local-bin\\product",
+    "Hash": "A4807EBF92BD5848157A156B58AF70533DF1C39050C3487DE791EA14310B801E"
+  },
+  {
+    "Path": "C:\\Users\\35795\\Desktop\\order-transaction\\deploy\\local-bin\\user",
+    "Hash": "5BF16B441A41EA83F66DDC2AEC6FB9A26815788E66931A9B4358EF23AA14DE06"
+  },
+  {
+    "Path": "C:\\Users\\35795\\Desktop\\order-transaction\\deploy\\local-bin\\warehouse",
+    "Hash": "8BD2D690B3BA499A34AC43D6E99BF778E3058EC8A3175C2935FCDFCE27BFF642"
+  }
+]

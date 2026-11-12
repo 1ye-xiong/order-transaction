@@ -44,18 +44,36 @@ func (p *productStock) Reserve(ctx context.Context, orderNo string, productID st
 }
 
 func (p *productStock) Release(ctx context.Context, orderNo string) error {
-	_, err := p.client.ReleaseStock(ctx, &productv1.ReleaseStockRequest{OrderNo: orderNo})
-	return err
+	resp, err := p.client.ReleaseStock(ctx, &productv1.ReleaseStockRequest{OrderNo: orderNo})
+	if err != nil {
+		return err
+	}
+	if !resp.GetOk() {
+		return fmt.Errorf("stock release failed")
+	}
+	return nil
 }
 
 func (p *productStock) Confirm(ctx context.Context, orderNo string) error {
-	_, err := p.client.ConfirmStock(ctx, &productv1.ConfirmStockRequest{OrderNo: orderNo})
-	return err
+	resp, err := p.client.ConfirmStock(ctx, &productv1.ConfirmStockRequest{OrderNo: orderNo})
+	if err != nil {
+		return err
+	}
+	if !resp.GetOk() {
+		return fmt.Errorf("stock confirm failed")
+	}
+	return nil
 }
 
 func (p *productStock) Restore(ctx context.Context, orderNo string) error {
-	_, err := p.client.RestoreStock(ctx, &productv1.RestoreStockRequest{OrderNo: orderNo})
-	return err
+	resp, err := p.client.RestoreStock(ctx, &productv1.RestoreStockRequest{OrderNo: orderNo})
+	if err != nil {
+		return err
+	}
+	if !resp.GetOk() {
+		return fmt.Errorf("stock restore failed")
+	}
+	return nil
 }
 
 func (p *productStock) GetProduct(ctx context.Context, productID string) (string, int64, error) {

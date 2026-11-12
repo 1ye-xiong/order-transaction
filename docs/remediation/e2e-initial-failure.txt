@@ -1,0 +1,18 @@
+Acceptance time 2026-11-12T15:17:14.455351+08:00
+Source HEAD f2b20529e3ab908b3b4af61ef2abf0c1f3e98791 plus uncommitted worktree changes (not an exact commit release).
+Built six services. Isolated runtime: C:\Users\35795\AppData\Local\Temp\trade-acceptance-em6ivhva
+All six services started; six teaching accounts authenticated.
+Traceback (most recent call last):
+  File "C:\Users\35795\Desktop\order-transaction\tools\audit_e2e.py", line 160, in main
+    try:h.prepare(); h.start(); h.run(); ok=True
+                                ~~~~~^^
+  File "C:\Users\35795\Desktop\order-transaction\tools\audit_e2e.py", line 88, in run
+    initial=self.api('GET','/products','buyer1')['items']; assert len(initial)==2,initial
+            ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\35795\Desktop\order-transaction\tools\audit_e2e.py", line 62, in api
+    assert code<300,(method,path,code,data)
+           ^^^^^^^^
+AssertionError: ('GET', '/products', 500, {'request_id': '9a73daf9-0ae7-4914-8258-90e9fd3b10ac', 'error': {'code': 'internal_error', 'message': 'internal error'}})
+
+Runtime logs retained at C:\Users\35795\AppData\Local\Temp\trade-acceptance-em6ivhva
+RESULT FAIL

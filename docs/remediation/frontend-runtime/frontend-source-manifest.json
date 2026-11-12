@@ -1,0 +1,15 @@
+{
+  "time": "2026-11-12T16:14:23.458517",
+  "files": {
+    "web\\frontend\\src\\api.ts": "674cdf3ac3a3013d3ef01803e19769e7220a71376fdd2c6df4cfc2088d80e563",
+    "web\\frontend\\src\\App.tsx": "86798f26e83b1778756f4a4261fe286eafc283f7a30f91073e3950550f4945a3",
+    "web\\frontend\\src\\index.css": "b6b00020ed2357fcfdb776403230cbf612f1615b7e5ac4530d217ad1a5fa4e52",
+    "web\\frontend\\src\\main.tsx": "5f49dce6e6cc4b5d678cf529ef892af0ab7dfa6afb300b11ad559224019b8b05",
+    "web\\frontend\\src\\vite-env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "web\\dist\\.gitattributes": "cc5569403b253a8e7f72de4d8c16054cd36abbc68065e21678e5ed5ace1b42d6",
+    "web\\dist\\favicon.png": "e83dfb12d209c2da1390e424398f81e745992339073f7e6ef38ae8b5aea1b522",
+    "web\\dist\\index.html": "d3e376950b32ce8866a1d531f2bcd2f69fbab081e9952240f8059fb230331b54",
+    "web\\dist\\assets\\index-B4HXtLM6.js": "a5d488a129e2dd00bea2ec7f27fee8f22f1f81dd1c30e7cf60bffa25089f84dd",
+    "web\\dist\\assets\\index-rxN9xOh8.css": "e91080d914e5727e0218c06339831a139de9f15806a42502f507edb2771c50df"
+  }
+}

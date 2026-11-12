@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"strconv"
 
 	orderv1 "github.com/BwCloudWeGo/bw-cli/api/gen/order/v1"
 	"github.com/BwCloudWeGo/bw-cli/internal/gateway/request"
@@ -50,7 +51,13 @@ func (h *OrderHandler) Get(c *gin.Context) {
 
 // ListMy 买家查询本人订单列表。
 func (h *OrderHandler) ListMy(c *gin.Context) {
-	resp, err := h.client.ListMyOrders(outgoingContext(c), &orderv1.ListMyOrdersRequest{Page: 1, PageSize: 50})
+	page, pageErr := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, sizeErr := strconv.Atoi(c.DefaultQuery("page_size", "50"))
+	if pageErr != nil || sizeErr != nil || page < 1 || page > 2147483647 || pageSize < 1 || pageSize > 100 {
+		httpx.Error(c, apperrors.InvalidArgument("invalid_pagination", "page must be positive and page_size must be between 1 and 100"))
+		return
+	}
+	resp, err := h.client.ListMyOrders(outgoingContext(c), &orderv1.ListMyOrdersRequest{Page: int32(page), PageSize: int32(pageSize)})
 	if err != nil {
 		httpx.Error(c, apperrors.FromGRPC(err))
 		return

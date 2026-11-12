@@ -11,12 +11,51 @@ import (
 
 // fakeNotify 记录通知投递。
 type fakeNotify struct {
-	calls []NotifyRequest
+	mu      sync.Mutex
+	calls   []NotifyRequest
+	changed chan struct{}
 }
 
 func (f *fakeNotify) SendPaymentNotify(_ context.Context, req NotifyRequest) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.calls = append(f.calls, req)
+	if f.changed != nil {
+		close(f.changed)
+		f.changed = nil
+	}
 	return nil
+}
+
+func (f *fakeNotify) snapshot() []NotifyRequest {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]NotifyRequest(nil), f.calls...)
+}
+
+func (f *fakeNotify) waitCalls(t *testing.T, n int) []NotifyRequest {
+	t.Helper()
+	timer := time.NewTimer(5 * time.Second)
+	defer timer.Stop()
+	for {
+		f.mu.Lock()
+		if len(f.calls) >= n {
+			calls := append([]NotifyRequest(nil), f.calls...)
+			f.mu.Unlock()
+			return calls
+		}
+		if f.changed == nil {
+			f.changed = make(chan struct{})
+		}
+		changed := f.changed
+		f.mu.Unlock()
+		select {
+		case <-changed:
+		case <-timer.C:
+			t.Fatalf("通知等待超时，收到%d次，预期%d次", len(f.snapshot()), n)
+			return nil
+		}
+	}
 }
 
 // fakeChannelRepo 是渠道仓储的内存实现。
@@ -33,13 +72,19 @@ func newFakeChannelRepo() *fakeChannelRepo {
 }
 
 func (r *fakeChannelRepo) SaveConfig(_ context.Context, c entity.ChannelConfig) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.config = c
 	return nil
 }
 func (r *fakeChannelRepo) LoadConfig(_ context.Context) (entity.ChannelConfig, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	return r.config, nil
 }
 func (r *fakeChannelRepo) SaveRecord(_ context.Context, record *entity.ChannelRecord) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.seq++
 	record.ID = r.seq
 	if record.Type == entity.RecordTypeRefund {
@@ -49,6 +94,8 @@ func (r *fakeChannelRepo) SaveRecord(_ context.Context, record *entity.ChannelRe
 	return nil
 }
 func (r *fakeChannelRepo) ListRecords(_ context.Context) ([]*entity.ChannelRecord, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	var items []*entity.ChannelRecord
 	for i := range r.records {
 		cp := r.records[i]
@@ -57,6 +104,8 @@ func (r *fakeChannelRepo) ListRecords(_ context.Context) ([]*entity.ChannelRecor
 	return items, nil
 }
 func (r *fakeChannelRepo) CountRefundAttempts(_ context.Context, refundNo string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	return r.attempts[refundNo], nil
 }
 
@@ -93,14 +142,14 @@ func TestPaySuccessNotify(t *testing.T) {
 	notifier := &fakeNotify{}
 	s := NewService(repo, notifier, "secret", nil)
 	tradeNo, err := s.Pay(context.Background(), "ORD-1", "buyer1", 10000)
-	time.Sleep(100 * time.Millisecond)
 	if err != nil {
 		t.Fatalf("pay: %v", err)
 	}
-	if len(notifier.calls) != 1 {
-		t.Fatalf("通知次数 = %d, want 1", len(notifier.calls))
+	calls := notifier.waitCalls(t, 1)
+	if len(calls) != 1 {
+		t.Fatalf("通知次数 = %d, want 1", len(calls))
 	}
-	call := notifier.calls[0]
+	call := calls[0]
 	if call.OrderNo != "ORD-1" || call.Status != NotifyStatusSuccess || call.ChannelTradeNo != tradeNo {
 		t.Fatalf("通知内容 = %+v", call)
 	}
@@ -116,9 +165,9 @@ func TestPayDuplicateNotify(t *testing.T) {
 	notifier := &fakeNotify{}
 	s := NewService(repo, notifier, "secret", nil)
 	_, _ = s.Pay(context.Background(), "ORD-DUP", "buyer1", 5000)
-	time.Sleep(150 * time.Millisecond)
-	if len(notifier.calls) != 3 {
-		t.Fatalf("通知次数 = %d, want 3", len(notifier.calls))
+	calls := notifier.waitCalls(t, 3)
+	if len(calls) != 3 {
+		t.Fatalf("通知次数 = %d, want 3", len(calls))
 	}
 }
 
@@ -129,16 +178,30 @@ func TestPayFailAndNoNotify(t *testing.T) {
 	notifier := &fakeNotify{}
 	s := NewService(repo, notifier, "secret", nil)
 	_, _ = s.Pay(context.Background(), "ORD-F", "buyer1", 1000)
-	time.Sleep(100 * time.Millisecond)
-	if len(notifier.calls) != 1 || notifier.calls[0].Status != NotifyStatusFailed {
-		t.Fatalf("失败场景通知 = %+v", notifier.calls)
+	calls := notifier.waitCalls(t, 1)
+	if len(calls) != 1 || calls[0].Status != NotifyStatusFailed {
+		t.Fatalf("失败场景通知 = %+v", calls)
 	}
 
 	_ = repo.SaveConfig(context.Background(), entity.ChannelConfig{PayBehavior: entity.PayBehaviorNoNotify, NotifyCount: 1})
 	_, _ = s.Pay(context.Background(), "ORD-N", "buyer1", 1000)
-	time.Sleep(100 * time.Millisecond)
+	// Observe a bounded quiet period using the notifier's synchronized event signal.
+	notifier.mu.Lock()
 	if len(notifier.calls) != 1 {
-		t.Fatalf("no_notify 场景不应发送通知, calls = %d", len(notifier.calls))
+		notifier.mu.Unlock()
+		t.Fatal("no_notify produced an extra notification")
+	}
+	if notifier.changed == nil {
+		notifier.changed = make(chan struct{})
+	}
+	changed := notifier.changed
+	notifier.mu.Unlock()
+	timer := time.NewTimer(100 * time.Millisecond)
+	defer timer.Stop()
+	select {
+	case <-changed:
+		t.Fatalf("no_notify 场景不应发送通知, calls = %d", len(notifier.snapshot()))
+	case <-timer.C:
 	}
 }
 

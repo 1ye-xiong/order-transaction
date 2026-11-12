@@ -77,21 +77,34 @@ func (r *GormRepository) CloseIfExpired(ctx context.Context, orderNo string, now
 // MarkPaid 条件更新：仅未过期的 PENDING_PAYMENT 订单可被支付成功通知标记为 PAID。
 // channel_trade_no 唯一索引兜底“同一渠道交易号只归属一个订单”。
 func (r *GormRepository) MarkPaid(ctx context.Context, orderNo string, tradeNo string, now time.Time) (bool, error) {
-	res := r.db.WithContext(ctx).Model(&dbmodel.OrderModel{}).
-		Where("order_no = ? AND status = ? AND pay_expire_at >= ?", orderNo, entity.StatusPendingPayment, now.UTC()).
-		Updates(map[string]interface{}{
-			"status":           entity.StatusPaid,
-			"channel_trade_no": tradeNo,
-			"paid_at":          now.UTC(),
-			"updated_at":       now.UTC(),
-		})
-	return res.RowsAffected == 1, res.Error
+	var changed bool
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockPaymentFacts(tx); err != nil {
+			return err
+		}
+		var count int64
+		if err := tx.Model(&dbmodel.PayExceptionModel{}).Where("channel_trade_no = ? AND reason = ? AND order_no <> ?", tradeNo, "late_payment", orderNo).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			return entity.ErrTradeNoConflict
+		}
+		res := tx.Model(&dbmodel.OrderModel{}).
+			Where("order_no = ? AND status = ? AND pay_expire_at >= ?", orderNo, entity.StatusPendingPayment, now.UTC()).
+			Updates(map[string]interface{}{"status": entity.StatusPaid, "channel_trade_no": tradeNo, "paid_at": now.UTC(), "updated_at": now.UTC()})
+		changed = res.RowsAffected == 1
+		return res.Error
+	})
+	return changed, err
 }
 
 // Transition 条件更新 from -> to，apply 在事务内修改字段。
 func (r *GormRepository) Transition(ctx context.Context, orderNo string, from string, to string, apply func(*entity.Order), now time.Time) (bool, error) {
 	var updated bool
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockPaymentFacts(tx); err != nil {
+			return err
+		}
 		var record dbmodel.OrderModel
 		err := tx.Where("order_no = ?", orderNo).First(&record).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -104,7 +117,6 @@ func (r *GormRepository) Transition(ctx context.Context, orderNo string, from st
 			updated = false
 			return nil
 		}
-		updated = true
 		if apply != nil {
 			order := toOrderDomain(&record)
 			apply(order)
@@ -112,7 +124,12 @@ func (r *GormRepository) Transition(ctx context.Context, orderNo string, from st
 		}
 		record.Status = to
 		record.UpdatedAt = now.UTC()
-		return tx.Save(&record).Error
+		res := tx.Model(&dbmodel.OrderModel{}).
+			Where("order_no = ? AND status = ?", orderNo, from).
+			Select("status", "updated_at", "paid_at", "carrier", "tracking_no", "shipped_at", "cancel_reason", "closed_at", "refund_fail_reason", "refunded_at").
+			Updates(&record)
+		updated = res.RowsAffected == 1
+		return res.Error
 	})
 	if err != nil {
 		return false, err
@@ -289,7 +306,39 @@ func (r *GormRepository) CreatePayException(ctx context.Context, ex *entity.PayE
 		Status:         ex.Status,
 		Detail:         ex.Detail,
 	}
-	if err := r.db.WithContext(ctx).Create(m).Error; err != nil {
+	if err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockPaymentFacts(tx); err != nil {
+			return err
+		}
+		if ex.Reason == "late_payment" {
+			var count int64
+			if err := tx.Model(&dbmodel.OrderModel{}).Where("channel_trade_no = ? AND order_no <> ?", ex.ChannelTradeNo, ex.OrderNo).Count(&count).Error; err != nil {
+				return err
+			}
+			if count > 0 {
+				return entity.ErrTradeNoConflict
+			}
+			var existing dbmodel.PayExceptionModel
+			err := tx.Where("channel_trade_no = ?", ex.ChannelTradeNo).First(&existing).Error
+			if err == nil {
+				if existing.Reason == "late_payment" {
+					if existing.OrderNo != ex.OrderNo || existing.AmountCents != ex.AmountCents {
+						return entity.ErrTradeNoConflict
+					}
+					*m = existing
+					return nil
+				}
+				m.ID = existing.ID
+				m.CreatedAt = existing.CreatedAt
+				m.Detail = existing.Detail + "；合法成功通知纠正：" + m.Detail
+				return tx.Save(m).Error
+			}
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		}
+		return tx.Create(m).Error
+	}); err != nil {
 		return err
 	}
 	ex.ID = m.ID
@@ -369,10 +418,19 @@ func (r *GormRepository) Summary(ctx context.Context) (int64, int64, map[string]
 		return 0, 0, nil, 0, err
 	}
 
+	// 迟到的真实成功支付也是收款事实，不能只累计其退款。
+	var latePaid int64
+	if err := r.db.WithContext(ctx).Model(&dbmodel.PayExceptionModel{}).
+		Where("reason = ?", "late_payment").
+		Select("COALESCE(SUM(amount_cents), 0)").Scan(&latePaid).Error; err != nil {
+		return 0, 0, nil, 0, err
+	}
+	paidCents += latePaid
+
 	// 迟到支付退款单独累计
 	var exceptionRefunded int64
 	err = r.db.WithContext(ctx).Model(&dbmodel.PayExceptionModel{}).
-		Where("status = ?", entity.ExceptionRefunded).
+		Where("status = ? AND reason = ?", entity.ExceptionRefunded, "late_payment").
 		Select("COALESCE(SUM(amount_cents), 0)").Scan(&exceptionRefunded).Error
 	if err != nil {
 		return 0, 0, nil, 0, err
@@ -502,3 +560,61 @@ func toExceptionDomain(m *dbmodel.PayExceptionModel) *entity.PayException {
 }
 
 var _ entity.Repository = (*GormRepository)(nil)
+
+// lockPaymentFacts obtains SQLite's database writer reservation before reading either fact table.
+// The teaching deployment uses SQLite; serializable cross-table facts must be revisited before changing databases.
+func lockPaymentFacts(tx *gorm.DB) error {
+	return tx.Exec("UPDATE orders SET updated_at = updated_at WHERE 1 = 0").Error
+}
+
+// ApplyRefundAtomic commits the state transition and its application together.
+func (r *GormRepository) ApplyRefundAtomic(ctx context.Context, orderNo, buyerID, reason string, now time.Time) (bool, error) {
+	var changed bool
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&dbmodel.OrderModel{}).Where("order_no = ? AND buyer_id = ? AND status = ?", orderNo, buyerID, entity.StatusPaid).Updates(map[string]interface{}{"status": entity.StatusRefundRequested, "updated_at": now.UTC()})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return nil
+		}
+		if err := tx.Create(&dbmodel.RefundRequestModel{OrderNo: orderNo, BuyerID: buyerID, Reason: reason, Status: entity.RefundPending, CreatedAt: now.UTC()}).Error; err != nil {
+			return err
+		}
+		changed = true
+		return nil
+	})
+	return changed, err
+}
+
+// ReviewRefundAtomic CASes the review and, when rejected, restores shipping in the same transaction.
+func (r *GormRepository) ReviewRefundAtomic(ctx context.Context, req *entity.RefundRequest, approve bool, now time.Time) (bool, error) {
+	var changed bool
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		status := entity.RefundRejected
+		if approve {
+			status = entity.RefundApproved
+		}
+		res := tx.Model(&dbmodel.RefundRequestModel{}).Where("id = ? AND order_no = ? AND status = ?", req.ID, req.OrderNo, entity.RefundPending).Updates(map[string]interface{}{"status": status, "reviewer_id": req.ReviewerID, "review_reason": req.ReviewReason, "reviewed_at": now.UTC()})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return nil
+		}
+		target := entity.StatusPaid
+		if approve {
+			target = entity.StatusRefundRequested
+		}
+		state := tx.Model(&dbmodel.OrderModel{}).Where("order_no = ? AND status = ?", req.OrderNo, entity.StatusRefundRequested).Updates(map[string]interface{}{"status": target, "updated_at": now.UTC()})
+		if state.Error != nil {
+			return state.Error
+		}
+		if state.RowsAffected != 1 {
+			return entity.ErrInvalidState
+		}
+		changed = true
+		return nil
+	})
+	return changed, err
+}

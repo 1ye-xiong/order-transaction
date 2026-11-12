@@ -82,6 +82,13 @@ func (r *GormRepository) Reserve(ctx context.Context, orderNo string, productID 
 		return entity.ErrInvalidQuantity
 	}
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// SQLite deferred transactions must acquire the writer reservation before reading;
+		// otherwise concurrent readers cannot upgrade their snapshot and fail SQLITE_BUSY.
+		if tx.Dialector.Name() == "sqlite" {
+			if err := tx.Exec("UPDATE product_reservations SET status = status WHERE 1 = 0").Error; err != nil {
+				return err
+			}
+		}
 		var existing dbmodel.ReservationModel
 		err := tx.Where("order_no = ?", orderNo).First(&existing).Error
 		if err == nil {
@@ -126,6 +133,13 @@ func (r *GormRepository) Reserve(ctx context.Context, orderNo string, productID 
 // Release 释放订单占用；重复释放幂等。
 func (r *GormRepository) Release(ctx context.Context, orderNo string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// SQLite deferred transactions must acquire the writer reservation before reading;
+		// otherwise concurrent readers cannot upgrade their snapshot and fail SQLITE_BUSY.
+		if tx.Dialector.Name() == "sqlite" {
+			if err := tx.Exec("UPDATE product_reservations SET status = status WHERE 1 = 0").Error; err != nil {
+				return err
+			}
+		}
 		var record dbmodel.ReservationModel
 		err := tx.Where("order_no = ?", orderNo).First(&record).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -137,19 +151,36 @@ func (r *GormRepository) Release(ctx context.Context, orderNo string) error {
 		if record.Status != entity.ReservationReserved {
 			return nil // released/confirmed：不多释放
 		}
+		// 先裁定占用状态，只有本事务获胜才能修改商品数量；失败会整体回滚。
+		claim := tx.Model(&dbmodel.ReservationModel{}).
+			Where("order_no = ? AND status = ?", orderNo, entity.ReservationReserved).
+			Update("status", entity.ReservationReleased)
+		if claim.Error != nil {
+			return claim.Error
+		}
+		if claim.RowsAffected == 0 {
+			return nil
+		}
 		if err := tx.Exec(
 			"UPDATE products SET reserved = MAX(reserved - ?, 0), updated_at = ? WHERE id = ?",
 			record.Quantity, time.Now().UTC(), record.ProductID,
 		).Error; err != nil {
 			return err
 		}
-		return tx.Model(&record).Update("status", entity.ReservationReleased).Error
+		return nil
 	})
 }
 
 // Confirm 将占用转为实际扣减；重复确认幂等。
 func (r *GormRepository) Confirm(ctx context.Context, orderNo string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// SQLite deferred transactions must acquire the writer reservation before reading;
+		// otherwise concurrent readers cannot upgrade their snapshot and fail SQLITE_BUSY.
+		if tx.Dialector.Name() == "sqlite" {
+			if err := tx.Exec("UPDATE product_reservations SET status = status WHERE 1 = 0").Error; err != nil {
+				return err
+			}
+		}
 		var record dbmodel.ReservationModel
 		err := tx.Where("order_no = ?", orderNo).First(&record).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -161,19 +192,36 @@ func (r *GormRepository) Confirm(ctx context.Context, orderNo string) error {
 		if record.Status != entity.ReservationReserved {
 			return nil
 		}
+		// 先裁定占用状态，只有本事务获胜才能修改商品数量；失败会整体回滚。
+		claim := tx.Model(&dbmodel.ReservationModel{}).
+			Where("order_no = ? AND status = ?", orderNo, entity.ReservationReserved).
+			Update("status", entity.ReservationConfirmed)
+		if claim.Error != nil {
+			return claim.Error
+		}
+		if claim.RowsAffected == 0 {
+			return nil
+		}
 		if err := tx.Exec(
 			"UPDATE products SET stock_total = stock_total - ?, reserved = MAX(reserved - ?, 0), updated_at = ? WHERE id = ?",
 			record.Quantity, record.Quantity, time.Now().UTC(), record.ProductID,
 		).Error; err != nil {
 			return err
 		}
-		return tx.Model(&record).Update("status", entity.ReservationConfirmed).Error
+		return nil
 	})
 }
 
 // Restore 把已确认扣减的库存恢复为可售（售前退款成功）；重复恢复幂等。
 func (r *GormRepository) Restore(ctx context.Context, orderNo string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// SQLite deferred transactions must acquire the writer reservation before reading;
+		// otherwise concurrent readers cannot upgrade their snapshot and fail SQLITE_BUSY.
+		if tx.Dialector.Name() == "sqlite" {
+			if err := tx.Exec("UPDATE product_reservations SET status = status WHERE 1 = 0").Error; err != nil {
+				return err
+			}
+		}
 		var record dbmodel.ReservationModel
 		err := tx.Where("order_no = ?", orderNo).First(&record).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -185,13 +233,23 @@ func (r *GormRepository) Restore(ctx context.Context, orderNo string) error {
 		if record.Status != entity.ReservationConfirmed {
 			return nil
 		}
+		// 先裁定占用状态，只有本事务获胜才能修改商品数量；失败会整体回滚。
+		claim := tx.Model(&dbmodel.ReservationModel{}).
+			Where("order_no = ? AND status = ?", orderNo, entity.ReservationConfirmed).
+			Update("status", entity.ReservationRestored)
+		if claim.Error != nil {
+			return claim.Error
+		}
+		if claim.RowsAffected == 0 {
+			return nil
+		}
 		if err := tx.Exec(
 			"UPDATE products SET stock_total = stock_total + ?, updated_at = ? WHERE id = ?",
 			record.Quantity, time.Now().UTC(), record.ProductID,
 		).Error; err != nil {
 			return err
 		}
-		return tx.Model(&record).Update("status", entity.ReservationRestored).Error
+		return nil
 	})
 }
 

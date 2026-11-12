@@ -11,3 +11,11 @@ docs/superpowers/
 /.codex/
 /graphify-out/
 /CLAUDE.md
+
+/web/frontend/node_modules/
+/web/dist/
+
+/deploy/config.local-release.yaml
+/deploy/.env.local-release
+
+/deploy/local-bin/

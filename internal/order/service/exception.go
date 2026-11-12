@@ -28,6 +28,9 @@ func (s *Service) RefundPayException(ctx context.Context, operatorID string, exc
 	if ex.Status != entity.ExceptionPending {
 		return ex, false, "exception already handled: " + ex.Status, nil
 	}
+	if ex.Reason != "late_payment" {
+		return nil, false, "", fmt.Errorf("only verified late payments can be refunded")
+	}
 	refundNo := fmt.Sprintf("RFE%d", ex.ID)
 	success, message, err := s.channel.Refund(ctx, refundNo, ex.ChannelTradeNo, ex.AmountCents, "迟到支付退款")
 	if err != nil {

@@ -81,7 +81,7 @@ func (s *Service) Pay(ctx context.Context, orderNo string, buyerID string, amoun
 		ChannelTradeNo: tradeNo,
 		OrderNo:        orderNo,
 		AmountCents:    amountCents,
-		Result:         "accepted",
+		Result:         map[bool]string{true: "success", false: "failed"}[config.PayBehavior != entity.PayBehaviorFail],
 		Detail:         fmt.Sprintf("buyer=%s behavior=%s", buyerID, config.PayBehavior),
 	}
 	if err := s.repo.SaveRecord(ctx, record); err != nil {
@@ -138,6 +138,11 @@ func (s *Service) dispatchNotify(orderNo string, amountCents int64, tradeNo stri
 
 // Refund 受理退款：第 N 次尝试起成功（N 来自配置），返回即时结果。
 func (s *Service) Refund(ctx context.Context, refundNo string, channelTradeNo string, amountCents int64, reason string) (bool, string, error) {
+	if atomicRepo, ok := s.repo.(interface {
+		ExecuteRefund(context.Context, string, string, int64, string) (bool, string, error)
+	}); ok {
+		return atomicRepo.ExecuteRefund(ctx, refundNo, channelTradeNo, amountCents, reason)
+	}
 	config, err := s.repo.LoadConfig(ctx)
 	if err != nil {
 		return false, "", err

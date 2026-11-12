@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-12",
+  "scope": "current uncommitted repair/topic01 workspace",
+  "all_go_tests_exit": 0,
+  "go_vet_exit": 0,
+  "gofmt_output_empty": true,
+  "git_diff_check_exit": 0,
+  "ui_regression_exit": 0,
+  "compose_config_exit": 0,
+  "core_linux_race_exit": 0,
+  "http_five_scenarios_and_restart_exit": 0,
+  "overall_coverage_percent": 45.57,
+  "core_min_package_coverage_percent": 85.5,
+  "coverage_gate_exit": 1,
+  "coverage_exclusions": [
+    "api/gen generated code only"
+  ],
+  "published": false,
+  "score_claim": null,
+  "all_linux_race_exit": 0
+}

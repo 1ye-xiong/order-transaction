@@ -116,3 +116,63 @@ func (r *GormRepository) CountRefundAttempts(ctx context.Context, refundNo strin
 		Count(&count).Error
 	return int(count), err
 }
+
+// ExecuteRefund atomically verifies the original receipt, prevents a second
+// successful refund and persists each failed attempt under the same business ID.
+func (r *GormRepository) ExecuteRefund(ctx context.Context, refundNo, tradeNo string, amount int64, reason string) (bool, string, error) {
+	if refundNo == "" || tradeNo == "" || amount <= 0 {
+		return false, "", errors.New("invalid refund")
+	}
+	var success bool
+	var message string
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Acquire the database write lock before reading facts (also works on SQLite).
+		if err := tx.Model(&dbmodel.ChannelRecordModel{}).Where("channel_trade_no = ?", tradeNo).UpdateColumn("attempts", gorm.Expr("attempts")).Error; err != nil {
+			return err
+		}
+		var payment dbmodel.ChannelRecordModel
+		if err := tx.Where("type = ? AND channel_trade_no = ? AND result = ?", entity.RecordTypePayment, tradeNo, "success").First(&payment).Error; err != nil {
+			return errors.New("confirmed payment not found")
+		}
+		if payment.AmountCents != amount {
+			return errors.New("refund amount differs from payment")
+		}
+		var history []dbmodel.ChannelRecordModel
+		if err := tx.Where("type = ? AND (channel_trade_no = ? OR refund_no = ?)", entity.RecordTypeRefund, tradeNo, refundNo).Find(&history).Error; err != nil {
+			return err
+		}
+		attempts := 0
+		for _, h := range history {
+			if h.RefundNo == refundNo && (h.ChannelTradeNo != tradeNo || h.AmountCents != amount) {
+				return errors.New("refund identity conflict")
+			}
+			if h.Result == "success" {
+				if h.RefundNo != refundNo {
+					return errors.New("payment already refunded")
+				}
+				success, message = true, "refund already successful"
+				return nil
+			}
+			if h.RefundNo == refundNo {
+				attempts++
+			}
+		}
+		var cfg dbmodel.ChannelConfigModel
+		err := tx.First(&cfg).Error
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		threshold := cfg.RefundSuccessFromAttempt
+		if threshold < 1 {
+			threshold = 1
+		}
+		success = attempts+1 >= threshold
+		result := "failed"
+		if success {
+			result = "success"
+		}
+		message = "refund " + result
+		return tx.Create(&dbmodel.ChannelRecordModel{Type: entity.RecordTypeRefund, ChannelTradeNo: tradeNo, RefundNo: refundNo, OrderNo: payment.OrderNo, AmountCents: amount, Result: result, Attempts: attempts + 1, Detail: reason}).Error
+	})
+	return success, message, err
+}

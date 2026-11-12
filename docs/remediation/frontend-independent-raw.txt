@@ -1,0 +1,91 @@
+Command: node --test web/frontend/api.contract.test.mjs
+Exit: 0
+✔ actual JSON envelope is unwrapped; JWT and paging reach server (94.62ms)
+✔ login and current-user preserve server role and token (1.4066ms)
+✔ HTTP errors expose backend explanation (2.3569ms)
+✔ business rejected HTTP 200 operations cannot display success (1.2923ms)
+✔ approved request returning REFUND_FAILED remains failed server state (1.0042ms)
+✔ money uses integer cents and flags unsafe values (0.2687ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 509.2964
+Command: go test ./internal/gateway/router -run TestFrontend -count=1 -v
+Exit: 0
+=== RUN   TestFrontendStaticRoutesServeBuiltAppAndKeepAPI404
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (1 handlers)
+[GIN-debug] HEAD   /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (1 handlers)
+[GIN-debug] GET    /legacy                   --> github.com/gin-gonic/gin.(*RouterGroup).StaticFile.func1 (1 handlers)
+[GIN-debug] HEAD   /legacy                   --> github.com/gin-gonic/gin.(*RouterGroup).StaticFile.func1 (1 handlers)
+[GIN-debug] GET    /                         --> github.com/BwCloudWeGo/bw-cli/internal/gateway/router.registerStaticPages.func1 (1 handlers)
+--- PASS: TestFrontendStaticRoutesServeBuiltAppAndKeepAPI404 (0.09s)
+=== RUN   TestFrontendStaticRoutesFallBackWithoutBuild
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /legacy                   --> github.com/gin-gonic/gin.(*RouterGroup).StaticFile.func1 (1 handlers)
+[GIN-debug] HEAD   /legacy                   --> github.com/gin-gonic/gin.(*RouterGroup).StaticFile.func1 (1 handlers)
+[GIN-debug] GET    /                         --> github.com/BwCloudWeGo/bw-cli/internal/gateway/router.registerStaticPages.func1 (1 handlers)
+--- PASS: TestFrontendStaticRoutesFallBackWithoutBuild (0.00s)
+PASS
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/router	0.532s
+
+Algorithm Hash                                                             Path
+--------- ----                                                             ----
+SHA256    674CDF3AC3A3013D3EF01803E19769E7220A71376FDD2C6DF4CFC2088D80E563 C:\Users\35795\Desktop\order-transaction\web\frontend\src\api.ts
+SHA256    7AF1AE985137C3ED9E7E782FF4DB239C8982A4164433C0BBB74A22096CAA009B C:\Users\35795\Desktop\order-transaction\web\frontend\src\App.tsx
+SHA256    B0A71659885454542049D82E47B6D54A724E5E1325855F4070170A6887B13A0C C:\Users\35795\Desktop\order-transaction\internal\gateway\router\v1.go
+
+
+Command: pnpm exec tsc --noEmit
+Exit: 0
+Command: pnpm build
+Exit: 0
+
+> figma-make-app@1.0.0 build C:\Users\35795\Desktop\order-transaction\web\frontend
+> vite build
+
+vite v8.0.5 building client environment for production...
+[2K
+transforming...✓ 17 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/index.html                   0.37 kB │ gzip:  0.30 kB
+../dist/assets/index-rxN9xOh8.css   22.81 kB │ gzip:  6.21 kB
+../dist/assets/index-B4HXtLM6.js   211.49 kB │ gzip: 66.92 kB
+
+✓ built in 282ms
+Command: go test ./internal/gateway/handler ./internal/order/dto -run TestFrontend -count=1 -v
+Exit: 0
+=== RUN   TestFrontendPaginationGatewayContract
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /mine                     --> github.com/BwCloudWeGo/bw-cli/internal/gateway/handler.(*OrderHandler).ListMy-fm (1 handlers)
+--- PASS: TestFrontendPaginationGatewayContract (0.00s)
+PASS
+ok  	github.com/BwCloudWeGo/bw-cli/internal/gateway/handler	0.379s
+=== RUN   TestFrontendExpiryCarriesUnambiguousTimezone
+--- PASS: TestFrontendExpiryCarriesUnambiguousTimezone (0.01s)
+PASS
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/dto	0.711s
+
+Algorithm Hash                                                             Path
+--------- ----                                                             ----
+SHA256    674CDF3AC3A3013D3EF01803E19769E7220A71376FDD2C6DF4CFC2088D80E563 C:\Users\35795\Desktop\order-transaction\web\frontend\src\api.ts
+SHA256    86798F26E83B1778756F4A4261FE286EAFC283F7A30F91073E3950550F4945A3 C:\Users\35795\Desktop\order-transaction\web\frontend\src\App.tsx
+SHA256    B0A71659885454542049D82E47B6D54A724E5E1325855F4070170A6887B13A0C C:\Users\35795\Desktop\order-transaction\internal\gateway\router\v1.go
+SHA256    65FEFA22B449C0EDE4F61F6934BFDC0B49D7E15199FB31A11B1535A69367A8F4 C:\Users\35795\Desktop\order-transaction\internal\gateway\handler\order_handler.go
+SHA256    26F68FDA9C2A17A0F0ED50578A066A4E1DB60EB606FDDE040B1E502946F08205 C:\Users\35795\Desktop\order-transaction\internal\order\dto\order.go
+
+

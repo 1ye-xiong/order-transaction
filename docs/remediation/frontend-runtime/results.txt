@@ -1,0 +1,31 @@
+Built six services. Isolated runtime: C:\Users\35795\AppData\Local\Temp\trade-acceptance-zpl4cem6
+All six services started; six teaching accounts authenticated.
+PASS compiled asset /assets/index-B4HXtLM6.js 211499 bytes text/javascript; charset=utf-8
+PASS compiled asset /assets/index-rxN9xOh8.css 22813 bytes text/css; charset=utf-8
+PASS real gateway root compiled React, SPA route, legacy page and API404
+PASS actual request login/me buyer1 -> buyer
+PASS actual request login/me buyer2 -> buyer
+PASS actual request login/me buyer3 -> buyer
+PASS actual request login/me ops01 -> ops
+PASS actual request login/me cs01 -> cs
+PASS actual request login/me warehouse01 -> warehouse
+PASS actual request warehouse01 /warehouse/orders
+PASS actual request cs01 /cs/refunds
+PASS actual request cs01 /cs/pay-exceptions
+PASS actual request ops01 /ops/summary
+PASS actual request ops01 /channel/config
+PASS actual request ops01 /channel/records
+PASS actual request unwrap, 401/403 errors and integer-cent formatting
+
+
+Seed: exactly two products; three buyers and three staff authenticated. Teaching expiry explicitly shortened to 3 seconds.
+PASS S1: real HTTP create/pay (3 repeated notifications)/ship/buyer tracking/ops stock and records. order=ORD1794471251894c1cd047e1a
+PASS S2: 20 HTTP requests / 5 successful / 15 rejected; cancel 2 twice, then 2 other purchases; no oversell.
+PASS S3: paid/refund apply/shipping blocked/blank review rejected/first channel refund fails/retry succeeds/5 stock restored.
+PASS S4: timeout before 3 delayed success notifications; exception refunded twice requests, only 1 channel success; stock 5; summary paid=30000/refunded=20000.
+PASS channel branches: explicit FAILED leaves order unpaid; no_notify times out server-side and releases stock.
+PASS S5: simultaneous refund/ship -> REFUND_REQUESTED; other buyer GET/cancel denied; staff operation and channel auth boundaries denied.
+All six services started; six teaching accounts authenticated.
+PASS restart: all six processes stopped/restarted against same file; shipment, amounts and product count persisted; no duplicate seeding.
+Runtime retained C:\Users\35795\AppData\Local\Temp\trade-acceptance-zpl4cem6
+RESULT PASS

@@ -123,8 +123,8 @@ func (s *Service) CancelOrder(ctx context.Context, buyerID string, orderNo strin
 	if err != nil {
 		return nil, err
 	}
-	if changed {
-		if err := s.stock.Release(ctx, orderNo); err != nil {
+	if changed || order.Status == entity.StatusCancelled || order.Status == entity.StatusClosedTimeout {
+		if err := s.syncStock(ctx, orderNo, "release"); err != nil {
 			return nil, err
 		}
 		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{

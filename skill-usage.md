@@ -11,3 +11,10 @@
 
 本次检查—修正—复查仅针对Agent与Skill文件，不能替代学生实际审核记录，也不虚构独立开发测试验收会话。未伪造节省时间、发现运行Bug数或覆盖率。使用配置见docs/agents/README.md，文件改动及摘要见docs/agent-skill-changes.md。
 后续每次调用追加真实任务、版本、输入、输出路径、问题、学生修正要求、修复提交与复查；未发现问题记录范围与依据。
+
+
+## 2026-11-12 当前整改追加（不替代旧历史）
+
+读取项目 trade-business-check v2：输入原检查报告、原题及订单/商品/支付/仓库生产代码，执行状态、幂等、金额、权限、库存补偿和并发核对；发现并修复报告缺陷，同时独立真实HTTP验收发现RPC名称、身份转发、SQLite锁三处额外问题。输出见 docs/remediation/REPORT.md、独立测试和HTTP验收原件。测试/验收上下文另读取 topic01-acceptance-check。整题验收仍不通过，整体覆盖率、正式发布和视频缺失；不声明原历史阶段已补齐。学生已要求按报告修复，尚未记录本轮逐项人工审核。
+
+2026-11-12 前端源码接入追加：重新读取AGENTS v2、developer入口及trade-business-check v2，按已授权修补范围接入买家/仓库/客服/运营真实接口，复核整数分、服务端身份、异步支付/退款状态。独立测试与验收各自读题运行，证据见docs/remediation/frontend-independent-tests.md、frontend-acceptance.md。发现分页、时区、构建与轮询问题后修正复测；无正式发布或学生人工审核证据，不补写早期历史。

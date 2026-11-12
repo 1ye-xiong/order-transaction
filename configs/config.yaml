@@ -41,7 +41,7 @@ services:
 
 database:
   driver: sqlite
-  dsn: data/order-transaction.db
+  dsn: "data/order-transaction.db?_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)"
 
 # 题目 01 教学业务参数：演示时可将 order_pay_timeout_seconds 调小（如 60）缩短待付款时长。
 trade:

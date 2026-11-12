@@ -1,59 +1,66 @@
 ﻿services:
   user:
+    image: ${ORDER_IMAGE:-order-transaction:local-release}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    restart: unless-stopped
     command: ["/app/user"]
-    environment:
-      - CONFIG_PATH=configs/config.yaml
     volumes:
+      - ${ORDER_CONFIG_FILE:-./config.container.yaml}:/app/configs/config.yaml:ro
       - dbdata:/app/data
   product:
+    image: ${ORDER_IMAGE:-order-transaction:local-release}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    restart: unless-stopped
     command: ["/app/product"]
-    environment:
-      - CONFIG_PATH=configs/config.yaml
     volumes:
+      - ${ORDER_CONFIG_FILE:-./config.container.yaml}:/app/configs/config.yaml:ro
       - dbdata:/app/data
   order:
+    image: ${ORDER_IMAGE:-order-transaction:local-release}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    restart: unless-stopped
     command: ["/app/order"]
     depends_on:
       - user
       - product
-      - payment
-    environment:
-      - CONFIG_PATH=configs/config.yaml
     volumes:
+      - ${ORDER_CONFIG_FILE:-./config.container.yaml}:/app/configs/config.yaml:ro
       - dbdata:/app/data
   payment:
+    image: ${ORDER_IMAGE:-order-transaction:local-release}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    restart: unless-stopped
     command: ["/app/payment"]
     depends_on:
       - order
-    environment:
-      - CONFIG_PATH=configs/config.yaml
     volumes:
+      - ${ORDER_CONFIG_FILE:-./config.container.yaml}:/app/configs/config.yaml:ro
       - dbdata:/app/data
   warehouse:
+    image: ${ORDER_IMAGE:-order-transaction:local-release}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    restart: unless-stopped
     command: ["/app/warehouse"]
     depends_on:
       - order
-    environment:
-      - CONFIG_PATH=configs/config.yaml
+    volumes:
+      - ${ORDER_CONFIG_FILE:-./config.container.yaml}:/app/configs/config.yaml:ro
   gateway:
+    image: ${ORDER_IMAGE:-order-transaction:local-release}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+    restart: unless-stopped
     command: ["/app/gateway"]
     depends_on:
       - user
@@ -61,12 +68,15 @@
       - order
       - payment
       - warehouse
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     ports:
-      - "8080:8080"
-    environment:
-      - CONFIG_PATH=configs/config.yaml
+      - "${ORDER_BIND_ADDRESS:-127.0.0.1}:${ORDER_HTTP_PORT:-18080}:8080"
     volumes:
-      - ../web:/app/web:ro
+      - ${ORDER_CONFIG_FILE:-./config.container.yaml}:/app/configs/config.yaml:ro
       - dbdata:/app/data
 volumes:
   dbdata:

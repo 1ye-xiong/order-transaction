@@ -1,0 +1,50 @@
+2026-11-12 independent test agent /root/independent_tests
+Scope: current uncommitted working tree based on f2b20529e3ab908b3b4af61ef2abf0c1f3e98791
+Command: go test ./internal/order/... ./internal/payment/... ./internal/product/... ./internal/warehouse/... ./cmd/order -count=1 -cover
+Exit code: 0
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/dto	2.238s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/entity	2.200s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/handler	0.886s	coverage: 93.2% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/model	1.663s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/repo	0.635s	coverage: 89.3% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	0.363s	coverage: 85.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/entity	2.108s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/handler	0.352s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/model	2.069s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/repo	0.346s	coverage: 91.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/service	2.692s	coverage: 86.7% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/dto	1.222s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/entity	1.209s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/handler	0.354s	coverage: 86.8% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/model	1.243s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/repo	0.521s	coverage: 87.4% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/service	0.392s	coverage: 87.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/handler	0.372s	coverage: 92.9% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/service	1.635s	coverage: 100.0% of statements
+ok  	github.com/BwCloudWeGo/bw-cli/cmd/order	0.555s	coverage: 14.5% of statements
+
+Command: go test ./internal/order/service ./internal/payment/repo -race -count=1
+Exit code: 2
+go: -race requires cgo; enable cgo by setting CGO_ENABLED=1
+
+Algorithm Hash                                                             Path
+--------- ----                                                             ----
+SHA256    1B8DC369C8492778C2D113D96D3F3C3492131419354007AAA59E50B64C8746FD C:\Users\35795\Desktop\order-transaction\internal\order\service\audit_atomic_test.go
+SHA256    1011268AABB49994EF1309C10C4D1F99FABEB6F40BE4BC21CDB77D23EC07DD9F C:\Users\35795\Desktop\order-transaction\internal\order\service\audit_regression_test.go
+SHA256    B50632FFC3DE0741B7F4F460E2B0E9BD1D20D9DDBC7E64E06D04E0D8E35AA889 C:\Users\35795\Desktop\order-transaction\internal\order\service\exception.go
+SHA256    53C1087D86F03D051FB3792D05B6A1467AFEDF3AB60F207440CC20DC547AAB69 C:\Users\35795\Desktop\order-transaction\internal\order\service\fakes_test.go
+SHA256    55C905E5F446405F76AB5E16A6F7BA1CD11516F844BFCCABFCA5B96A644CB751 C:\Users\35795\Desktop\order-transaction\internal\order\service\notify_test.go
+SHA256    EF2F74E2A56AD021A0229409EA5BB899D89DB4396E4031209CFFF4764679603C C:\Users\35795\Desktop\order-transaction\internal\order\service\notify.go
+SHA256    2E7FDA82A9B00B4482D374526E0938D49BD21CA981EBFF836DA23A63DD1CA6FA C:\Users\35795\Desktop\order-transaction\internal\order\service\reconcile.go
+SHA256    332012771B70669845C6BAD6B171CDDC5C2887B1CFC00B1405DEC6E3539C4BD8 C:\Users\35795\Desktop\order-transaction\internal\order\service\refund.go
+SHA256    D390D1EB8F6565B5E6C19F701B9669BEE6C4053745608390E46CB91C1AAEC5CD C:\Users\35795\Desktop\order-transaction\internal\order\service\service_more_test.go
+SHA256    1D647DF5D2FCDF583C4BA0BBA84BA874C09BCF0A7BFFA3EFEED4FDA4691236BA C:\Users\35795\Desktop\order-transaction\internal\order\service\service_test.go
+SHA256    C2F807F696CF627B060B2645B506CE6F8B4611579EBCB135E09DA2554E8B6444 C:\Users\35795\Desktop\order-transaction\internal\order\service\service.go
+SHA256    C033D55F9E6A5A5C7C91824AA6019E48BDC0D812850F9D7CDDECECA068ED125B C:\Users\35795\Desktop\order-transaction\internal\order\service\ship.go
+SHA256    9284B370904F73902D0B94F0C8EC592F503CEE047C6D8652FF9A012EEB7BAF4A C:\Users\35795\Desktop\order-transaction\internal\product\handler\audit_rpc_contract_test.go
+SHA256    0123D21A69BCF4133B442C18CE251478AEB69FC204963B876FF053866B8E7FCB C:\Users\35795\Desktop\order-transaction\internal\product\handler\server_test.go
+SHA256    902905FE1F1D08BB800C2C6B1A92B27C093C0E622B1ECBBF7D6CC87426C7816E C:\Users\35795\Desktop\order-transaction\internal\product\handler\server.go
+SHA256    C39B144AE98BAC5815C95565D0882868B693ADC46F6EC777637B287ADCADC6B9 C:\Users\35795\Desktop\order-transaction\cmd\order\main.go
+SHA256    58BD332BC52DC2D7C5B384F86A5039789356FCE10A5BA5A77BB725DC8C428A98 C:\Users\35795\Desktop\order-transaction\cmd\order\stock_client_test.go
+
+

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/BwCloudWeGo/bw-cli/internal/order/dto"
@@ -27,7 +28,7 @@ func constantTimeEqual(a string, b string) bool {
 
 // ApplyRefund 买家对已付款未发货订单申请整单退款，申请期间暂停发货。
 func (s *Service) ApplyRefund(ctx context.Context, cmd dto.ApplyRefundCommand) (*dto.OrderDTO, error) {
-	if cmd.Reason == "" {
+	if strings.TrimSpace(cmd.Reason) == "" {
 		return nil, entity.ErrReasonRequired
 	}
 	order, err := s.repo.FindByOrderNo(ctx, cmd.OrderNo)
@@ -39,6 +40,22 @@ func (s *Service) ApplyRefund(ctx context.Context, cmd dto.ApplyRefundCommand) (
 	}
 	if !order.CanApplyRefund() {
 		return nil, fmt.Errorf("order not refundable in status %s", order.Status)
+	}
+	if atomicRepo, ok := s.repo.(interface {
+		ApplyRefundAtomic(context.Context, string, string, string, time.Time) (bool, error)
+	}); ok {
+		changed, err := atomicRepo.ApplyRefundAtomic(ctx, cmd.OrderNo, cmd.BuyerID, cmd.Reason, time.Now().UTC())
+		if err != nil {
+			return nil, err
+		}
+		if !changed {
+			return nil, entity.ErrInvalidState
+		}
+		order, err := s.repo.FindByOrderNo(ctx, cmd.OrderNo)
+		if err != nil {
+			return nil, err
+		}
+		return dto.FromOrder(order), nil
 	}
 	// 幂等：已有待审核申请时直接返回
 	if pending, _ := s.repo.FindPendingRefundByOrder(ctx, cmd.OrderNo); pending != nil {
@@ -53,13 +70,20 @@ func (s *Service) ApplyRefund(ctx context.Context, cmd dto.ApplyRefundCommand) (
 		order, _ = s.repo.FindByOrderNo(ctx, cmd.OrderNo)
 		return nil, fmt.Errorf("order not refundable in status %s", order.Status)
 	}
-	_ = s.repo.CreateRefundRequest(ctx, &entity.RefundRequest{
+	err = s.repo.CreateRefundRequest(ctx, &entity.RefundRequest{
 		OrderNo:   cmd.OrderNo,
 		BuyerID:   cmd.BuyerID,
 		Reason:    cmd.Reason,
 		Status:    entity.RefundPending,
 		CreatedAt: now,
 	})
+	if err != nil {
+		_, rollbackErr := s.repo.Transition(ctx, cmd.OrderNo, entity.StatusRefundRequested, entity.StatusPaid, nil, now)
+		if rollbackErr != nil {
+			return nil, fmt.Errorf("save refund: %v; rollback: %w", err, rollbackErr)
+		}
+		return nil, err
+	}
 	_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{
 		OrderNo: cmd.OrderNo, Type: entity.RecordTypeRefund, Operator: cmd.BuyerID,
 		Detail: "买家申请售前退款，发货暂停：" + cmd.Reason,
@@ -77,7 +101,7 @@ func (s *Service) ReviewRefund(ctx context.Context, cmd dto.ReviewRefundCommand)
 	if req.Status != entity.RefundPending {
 		return nil, fmt.Errorf("refund request already reviewed")
 	}
-	if !cmd.Approve && cmd.Reason == "" {
+	if strings.TrimSpace(cmd.Reason) == "" {
 		return nil, entity.ErrReasonRequired
 	}
 	now := time.Now().UTC()
@@ -87,6 +111,26 @@ func (s *Service) ReviewRefund(ctx context.Context, cmd dto.ReviewRefundCommand)
 	}
 	if order.Status != entity.StatusRefundRequested {
 		return nil, fmt.Errorf("order not in refund review status")
+	}
+	if atomicRepo, ok := s.repo.(interface {
+		ReviewRefundAtomic(context.Context, *entity.RefundRequest, bool, time.Time) (bool, error)
+	}); ok {
+		req.ReviewerID, req.ReviewReason = cmd.ReviewerID, cmd.Reason
+		changed, err := atomicRepo.ReviewRefundAtomic(ctx, req, cmd.Approve, now)
+		if err != nil {
+			return nil, err
+		}
+		if !changed {
+			return nil, entity.ErrInvalidState
+		}
+		if cmd.Approve {
+			return s.executeRefund(ctx, req.OrderNo, fmt.Sprintf("RF%d", req.ID), cmd.ReviewerID, "客服同意退款："+cmd.Reason)
+		}
+		updated, err := s.repo.FindByOrderNo(ctx, req.OrderNo)
+		if err != nil {
+			return nil, err
+		}
+		return dto.FromOrder(updated), nil
 	}
 	if !cmd.Approve {
 		req.Status = entity.RefundRejected
@@ -123,11 +167,26 @@ func (s *Service) RetryRefund(ctx context.Context, operatorID string, orderNo st
 	if err != nil {
 		return nil, err
 	}
-	if order.Status != entity.StatusRefundFailed {
+	if order.Status == entity.StatusRefunded {
+		records, err := s.repo.ListRecords(ctx, orderNo)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range records {
+			if r.Detail == "stock-completed:restore" {
+				return nil, fmt.Errorf("refund already completed")
+			}
+		}
+		if err := s.syncStock(ctx, orderNo, "restore"); err != nil {
+			return nil, err
+		}
+		return dto.FromOrder(order), nil
+	}
+	if order.Status != entity.StatusRefundFailed && order.Status != entity.StatusRefundRequested {
 		return nil, fmt.Errorf("order not in refund-failed status")
 	}
 	req, err := s.repo.FindLatestRefundByOrder(ctx, orderNo)
-	if err != nil || req == nil {
+	if err != nil || req == nil || req.Status != entity.RefundApproved {
 		return nil, fmt.Errorf("refund request not found")
 	}
 	return s.executeRefund(ctx, orderNo, fmt.Sprintf("RF%d", req.ID), operatorID, "客服重试退款")
@@ -167,7 +226,7 @@ func (s *Service) executeRefund(ctx context.Context, orderNo string, refundNo st
 			}
 		}
 		// 正常售前退款恢复可售数量；重复恢复幂等（商品服务按占用记录状态判断）
-		if err := s.stock.Restore(ctx, orderNo); err != nil {
+		if err := s.syncStock(ctx, orderNo, "restore"); err != nil {
 			return nil, err
 		}
 		_ = s.repo.CreateRecord(ctx, &entity.OrderRecord{

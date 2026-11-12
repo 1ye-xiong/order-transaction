@@ -153,3 +153,14 @@ func mapProductError(err error) error {
 		return apperrors.Wrap(apperrors.KindInternal, "product_service_error", "product service error", err)
 	}
 }
+
+// RPC names must match the generated service contract.
+func (s *Server) CreateProduct(ctx context.Context, req *productv1.CreateProductRequest) (*productv1.ProductResponse, error) {
+	return s.Create(ctx, req)
+}
+func (s *Server) UpdateProduct(ctx context.Context, req *productv1.UpdateProductRequest) (*productv1.ProductResponse, error) {
+	return s.Update(ctx, req)
+}
+func (s *Server) ListProducts(ctx context.Context, req *productv1.ListProductsRequest) (*productv1.ListProductsResponse, error) {
+	return s.List(ctx, req)
+}

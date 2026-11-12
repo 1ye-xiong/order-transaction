@@ -51,7 +51,13 @@ func registerTradeRoutes(v1 *gin.RouterGroup, h *handler.Handlers, jwtCfg middle
 		ops.GET("/orders/:orderNo/records", auth, h.Staff.OrderRecords)
 	}
 
-	channel := v1.Group("/channel")
+	channel := v1.Group("/channel", auth, func(c *gin.Context) {
+		if middleware.ClaimsFromContext(c).Role != "ops" {
+			c.AbortWithStatusJSON(403, gin.H{"message": "仅运营可操作模拟渠道"})
+			return
+		}
+		c.Next()
+	})
 	{
 		channel.GET("/config", h.Channel.GetConfig)
 		channel.PUT("/config", h.Channel.SetConfig)

@@ -1,0 +1,258 @@
+go: downloading go.uber.org/zap v1.28.0
+go: downloading google.golang.org/grpc v1.80.0
+go: downloading github.com/glebarez/sqlite v1.11.0
+go: downloading gorm.io/gorm v1.31.1
+go: downloading google.golang.org/protobuf v1.36.11
+go: downloading github.com/glebarez/go-sqlite v1.21.2
+go: downloading modernc.org/sqlite v1.23.1
+go: downloading go.uber.org/multierr v1.10.0
+go: downloading github.com/jinzhu/now v1.1.5
+go: downloading github.com/jinzhu/inflection v1.0.0
+go: downloading golang.org/x/text v0.35.0
+go: downloading google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516
+go: downloading modernc.org/libc v1.22.5
+go: downloading golang.org/x/net v0.51.0
+go: downloading golang.org/x/sys v0.41.0
+go: downloading github.com/dustin/go-humanize v1.0.1
+go: downloading github.com/google/uuid v1.6.0
+go: downloading modernc.org/memory v1.5.0
+go: downloading modernc.org/mathutil v1.5.0
+go: downloading github.com/mattn/go-isatty v0.0.20
+go: downloading github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/dto	1.050s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/entity	1.025s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/handler	1.578s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/model	1.037s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/repo	2.616s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/order/service	1.281s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/dto	1.057s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/entity	1.055s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/handler	1.283s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/model	1.056s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/repo	2.234s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/product/service	1.116s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/entity	1.050s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/handler	1.223s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/model	1.051s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/payment/repo	1.390s
+==================
+WARNING: DATA RACE
+Read at 0x00c0000122a0 by goroutine 11:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPaySuccessNotify()
+      /src/internal/payment/service/service_test.go:100 +0x5bd
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+
+Previous write at 0x00c0000122a0 by goroutine 12:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*fakeNotify).SendPaymentNotify()
+      /src/internal/payment/service/service_test.go:18 +0x104
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).dispatchNotify()
+      /src/internal/payment/service/service.go:120 +0x324
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay.gowrap1()
+      /src/internal/payment/service/service.go:96 +0xf4
+
+Goroutine 11 (running) created at:
+  testing.(*T).Run()
+      /usr/local/go/src/testing/testing.go:1997 +0x9d2
+  testing.runTests.func1()
+      /usr/local/go/src/testing/testing.go:2477 +0x84
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.runTests()
+      /usr/local/go/src/testing/testing.go:2475 +0x96c
+  testing.(*M).Run()
+      /usr/local/go/src/testing/testing.go:2337 +0xed4
+  main.main()
+      _testmain.go:57 +0x164
+
+Goroutine 12 (finished) created at:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay()
+      /src/internal/payment/service/service.go:96 +0x9fa
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPaySuccessNotify()
+      /src/internal/payment/service/service_test.go:95 +0x4fa
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+==================
+==================
+WARNING: DATA RACE
+Read at 0x00c000120000 by goroutine 11:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPaySuccessNotify()
+      /src/internal/payment/service/service_test.go:103 +0x684
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+
+Previous write at 0x00c000120000 by goroutine 12:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*fakeNotify).SendPaymentNotify()
+      /src/internal/payment/service/service_test.go:18 +0xa4
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).dispatchNotify()
+      /src/internal/payment/service/service.go:120 +0x324
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay.gowrap1()
+      /src/internal/payment/service/service.go:96 +0xf4
+
+Goroutine 11 (running) created at:
+  testing.(*T).Run()
+      /usr/local/go/src/testing/testing.go:1997 +0x9d2
+  testing.runTests.func1()
+      /usr/local/go/src/testing/testing.go:2477 +0x84
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.runTests()
+      /usr/local/go/src/testing/testing.go:2475 +0x96c
+  testing.(*M).Run()
+      /usr/local/go/src/testing/testing.go:2337 +0xed4
+  main.main()
+      _testmain.go:57 +0x164
+
+Goroutine 12 (finished) created at:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay()
+      /src/internal/payment/service/service.go:96 +0x9fa
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPaySuccessNotify()
+      /src/internal/payment/service/service_test.go:95 +0x4fa
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+==================
+--- FAIL: TestPaySuccessNotify (0.10s)
+    testing.go:1617: race detected during execution of test
+==================
+WARNING: DATA RACE
+Read at 0x00c00018e030 by goroutine 14:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPayDuplicateNotify()
+      /src/internal/payment/service/service_test.go:120 +0x584
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+
+Previous write at 0x00c00018e030 by goroutine 15:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*fakeNotify).SendPaymentNotify()
+      /src/internal/payment/service/service_test.go:18 +0x104
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).dispatchNotify()
+      /src/internal/payment/service/service.go:120 +0x324
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay.gowrap1()
+      /src/internal/payment/service/service.go:96 +0xf4
+
+Goroutine 14 (running) created at:
+  testing.(*T).Run()
+      /usr/local/go/src/testing/testing.go:1997 +0x9d2
+  testing.runTests.func1()
+      /usr/local/go/src/testing/testing.go:2477 +0x84
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.runTests()
+      /usr/local/go/src/testing/testing.go:2475 +0x96c
+  testing.(*M).Run()
+      /usr/local/go/src/testing/testing.go:2337 +0xed4
+  main.main()
+      _testmain.go:57 +0x164
+
+Goroutine 15 (finished) created at:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay()
+      /src/internal/payment/service/service.go:96 +0x9fa
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPayDuplicateNotify()
+      /src/internal/payment/service/service_test.go:118 +0x568
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+==================
+--- FAIL: TestPayDuplicateNotify (0.15s)
+    testing.go:1617: race detected during execution of test
+==================
+WARNING: DATA RACE
+Read at 0x00c000012300 by goroutine 17:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPayFailAndNoNotify()
+      /src/internal/payment/service/service_test.go:133 +0x5b1
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+
+Previous write at 0x00c000012300 by goroutine 18:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*fakeNotify).SendPaymentNotify()
+      /src/internal/payment/service/service_test.go:18 +0x104
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).dispatchNotify()
+      /src/internal/payment/service/service.go:120 +0x324
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay.gowrap1()
+      /src/internal/payment/service/service.go:96 +0xf4
+
+Goroutine 17 (running) created at:
+  testing.(*T).Run()
+      /usr/local/go/src/testing/testing.go:1997 +0x9d2
+  testing.runTests.func1()
+      /usr/local/go/src/testing/testing.go:2477 +0x84
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.runTests()
+      /usr/local/go/src/testing/testing.go:2475 +0x96c
+  testing.(*M).Run()
+      /usr/local/go/src/testing/testing.go:2337 +0xed4
+  main.main()
+      _testmain.go:57 +0x164
+
+Goroutine 18 (finished) created at:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay()
+      /src/internal/payment/service/service.go:96 +0x9fa
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPayFailAndNoNotify()
+      /src/internal/payment/service/service_test.go:131 +0x59a
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+==================
+==================
+WARNING: DATA RACE
+Read at 0x00c0000d82a8 by goroutine 17:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPayFailAndNoNotify()
+      /src/internal/payment/service/service_test.go:133 +0x5f9
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+
+Previous write at 0x00c0000d82a8 by goroutine 18:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*fakeNotify).SendPaymentNotify()
+      /src/internal/payment/service/service_test.go:18 +0xa4
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).dispatchNotify()
+      /src/internal/payment/service/service.go:120 +0x324
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay.gowrap1()
+      /src/internal/payment/service/service.go:96 +0xf4
+
+Goroutine 17 (running) created at:
+  testing.(*T).Run()
+      /usr/local/go/src/testing/testing.go:1997 +0x9d2
+  testing.runTests.func1()
+      /usr/local/go/src/testing/testing.go:2477 +0x84
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.runTests()
+      /usr/local/go/src/testing/testing.go:2475 +0x96c
+  testing.(*M).Run()
+      /usr/local/go/src/testing/testing.go:2337 +0xed4
+  main.main()
+      _testmain.go:57 +0x164
+
+Goroutine 18 (finished) created at:
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.(*Service).Pay()
+      /src/internal/payment/service/service.go:96 +0x9fa
+  github.com/BwCloudWeGo/bw-cli/internal/payment/service.TestPayFailAndNoNotify()
+      /src/internal/payment/service/service_test.go:131 +0x59a
+  testing.tRunner()
+      /usr/local/go/src/testing/testing.go:1934 +0x21c
+  testing.(*T).Run.gowrap1()
+      /usr/local/go/src/testing/testing.go:1997 +0x44
+==================
+--- FAIL: TestPayFailAndNoNotify (0.20s)
+    testing.go:1617: race detected during execution of test
+FAIL
+FAIL	github.com/BwCloudWeGo/bw-cli/internal/payment/service	0.514s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/handler	1.053s
+ok  	github.com/BwCloudWeGo/bw-cli/internal/warehouse/service	1.045s
+FAIL

@@ -134,8 +134,8 @@ func TestSummary(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Summary: %v", err)
 	}
-	if paidCents != 30000 {
-		t.Fatalf("已收款 = %d, want 30000", paidCents)
+	if paidCents != 33000 {
+		t.Fatalf("已收款 = %d, want 33000（含迟到支付3000）", paidCents)
 	}
 	if refundedCents != 13000 {
 		t.Fatalf("已退款 = %d, want 13000（订单 10000 + 异常 3000）", refundedCents)
