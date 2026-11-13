@@ -143,6 +143,9 @@ type MiddlewareConfig struct {
 type TradeConfig struct {
 	OrderPayTimeoutSeconds int    `mapstructure:"order_pay_timeout_seconds" yaml:"order_pay_timeout_seconds"`
 	PayNotifySecret        string `mapstructure:"pay_notify_secret" yaml:"pay_notify_secret"`
+	// InternalRPCSecret 是内部服务间 gRPC 互信的共享密钥：
+	// 调用方附加签名 metadata，下游服务端校验，防止内网直连伪造调用方身份。
+	InternalRPCSecret string `mapstructure:"internal_rpc_secret" yaml:"internal_rpc_secret"`
 }
 
 // OrderPayTimeout 返回待付款订单的有效期。

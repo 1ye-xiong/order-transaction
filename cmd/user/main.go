@@ -70,7 +70,9 @@ func run(configPath string) error {
 	if err := seedAccounts(context.Background(), svc, log); err != nil {
 		return fmt.Errorf("seed accounts failed"+": %w", err)
 	}
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		grpcx.UnaryServerAuthInterceptor(cfg.Trade.InternalRPCSecret),
+		grpcx.UnaryServerInterceptor(log)))
 	userv1.RegisterUserServiceServer(server, userhandler.NewServer(svc, log))
 
 	addr := fmt.Sprintf("%s:%d", cfg.GRPC.Host, cfg.ServicePort("user", 9001))

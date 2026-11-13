@@ -85,7 +85,9 @@ func run(configPath string) error {
 	}
 
 	// 渠道需要把支付通知回传给订单服务。
-	orderConn, err := grpc.Dial(cfg.ServiceTarget("order"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	orderConn, err := grpc.Dial(cfg.ServiceTarget("order"), grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)), grpcx.ResilientDialOption(grpcx.DefaultInternalCallTimeout),
+		grpc.WithChainUnaryInterceptor(grpcx.UnaryClientAuthInterceptor(cfg.Trade.InternalRPCSecret)))
 	if err != nil {
 		return fmt.Errorf("dial order service failed"+": %w", err)
 	}
@@ -94,7 +96,9 @@ func run(configPath string) error {
 	notifier := &orderNotifier{client: orderv1.NewOrderServiceClient(orderConn)}
 	repo := paymentrepo.NewGormRepository(db)
 	svc := paymentservice.NewService(repo, notifier, cfg.Trade.PayNotifySecret, log)
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		grpcx.UnaryServerAuthInterceptor(cfg.Trade.InternalRPCSecret),
+		grpcx.UnaryServerInterceptor(log)))
 	paymentv1.RegisterPaymentServiceServer(server, paymenthandler.NewServer(svc, log))
 
 	port := cfg.ServicePort("payment", defaultGRPCPort)

@@ -97,7 +97,9 @@ func run(configPath string) error {
 	svc := productservice.NewService(repo)
 	seedProducts(context.Background(), svc, log)
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		grpcx.UnaryServerAuthInterceptor(cfg.Trade.InternalRPCSecret),
+		grpcx.UnaryServerInterceptor(log)))
 	productv1.RegisterProductServiceServer(server, producthandler.NewServer(svc, log))
 
 	port := cfg.ServicePort("product", defaultGRPCPort)

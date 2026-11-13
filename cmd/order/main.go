@@ -148,12 +148,16 @@ func run(configPath string) error {
 		return fmt.Errorf("migrate order database failed"+": %w", err)
 	}
 
-	productConn, err := grpc.Dial(cfg.ServiceTarget("product"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	productConn, err := grpc.Dial(cfg.ServiceTarget("product"), grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)), grpcx.ResilientDialOption(grpcx.DefaultInternalCallTimeout),
+		grpc.WithChainUnaryInterceptor(grpcx.UnaryClientAuthInterceptor(cfg.Trade.InternalRPCSecret)))
 	if err != nil {
 		return fmt.Errorf("dial product service failed"+": %w", err)
 	}
 	defer productConn.Close()
-	paymentConn, err := grpc.Dial(cfg.ServiceTarget("payment"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	paymentConn, err := grpc.Dial(cfg.ServiceTarget("payment"), grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)), grpcx.ResilientDialOption(grpcx.DefaultInternalCallTimeout),
+		grpc.WithChainUnaryInterceptor(grpcx.UnaryClientAuthInterceptor(cfg.Trade.InternalRPCSecret)))
 	if err != nil {
 		return fmt.Errorf("dial payment service failed"+": %w", err)
 	}
@@ -184,7 +188,9 @@ func run(configPath string) error {
 		}
 	}()
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		grpcx.UnaryServerAuthInterceptor(cfg.Trade.InternalRPCSecret),
+		grpcx.UnaryServerInterceptor(log)))
 	orderv1.RegisterOrderServiceServer(server, orderhandler.NewServer(svc, log))
 
 	port := cfg.ServicePort("order", defaultGRPCPort)

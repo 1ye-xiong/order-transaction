@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/BwCloudWeGo/bw-cli/internal/payment/entity"
-	"testing"
 )
 
 // fakeNotify 记录通知投递。
@@ -14,6 +15,7 @@ type fakeNotify struct {
 	mu      sync.Mutex
 	calls   []NotifyRequest
 	changed chan struct{}
+	err     error
 }
 
 func (f *fakeNotify) SendPaymentNotify(_ context.Context, req NotifyRequest) error {
@@ -24,7 +26,7 @@ func (f *fakeNotify) SendPaymentNotify(_ context.Context, req NotifyRequest) err
 		close(f.changed)
 		f.changed = nil
 	}
-	return nil
+	return f.err
 }
 
 func (f *fakeNotify) snapshot() []NotifyRequest {
@@ -246,5 +248,133 @@ func TestSetAndGetConfig(t *testing.T) {
 	}
 	if c.PayBehavior != entity.PayBehaviorFail || c.NotifyCount != 2 || c.RefundSuccessFromAttempt != 3 {
 		t.Fatalf("config = %+v", c)
+	}
+}
+
+// errChannelRepo 在指定仓储操作上注入失败，覆盖服务层的错误传播分支。
+type errChannelRepo struct {
+	fakeChannelRepo
+	errLoadConfig    error
+	errSaveRecord    error
+	errCountAttempts error
+}
+
+func (r *errChannelRepo) LoadConfig(_ context.Context) (entity.ChannelConfig, error) {
+	if r.errLoadConfig != nil {
+		return entity.ChannelConfig{}, r.errLoadConfig
+	}
+	return r.fakeChannelRepo.LoadConfig(context.Background())
+}
+
+func (r *errChannelRepo) SaveRecord(ctx context.Context, record *entity.ChannelRecord) error {
+	if r.errSaveRecord != nil {
+		return r.errSaveRecord
+	}
+	return r.fakeChannelRepo.SaveRecord(ctx, record)
+}
+
+func (r *errChannelRepo) CountRefundAttempts(_ context.Context, refundNo string) (int, error) {
+	if r.errCountAttempts != nil {
+		return 0, r.errCountAttempts
+	}
+	return r.fakeChannelRepo.CountRefundAttempts(context.Background(), refundNo)
+}
+
+// atomicChannelRepo 实现仓储的原子退款扩展接口，覆盖 ExecuteRefund 快速路径。
+type atomicChannelRepo struct {
+	fakeChannelRepo
+	calls int
+}
+
+func (r *atomicChannelRepo) ExecuteRefund(_ context.Context, refundNo string, _ string, _ int64, _ string) (bool, string, error) {
+	r.calls++
+	return true, "atomic refund " + refundNo, nil
+}
+
+var errInjected = errors.New("注入的仓储故障")
+
+func TestPayLoadConfigError(t *testing.T) {
+	s := NewService(&errChannelRepo{errLoadConfig: errInjected}, &fakeNotify{}, "secret", nil)
+	if _, err := s.Pay(context.Background(), "ORD-E1", "buyer1", 1000); !errors.Is(err, errInjected) {
+		t.Fatalf("LoadConfig 失败应向上传播, got %v", err)
+	}
+}
+
+func TestPaySaveRecordError(t *testing.T) {
+	s := NewService(&errChannelRepo{errSaveRecord: errInjected}, &fakeNotify{}, "secret", nil)
+	if _, err := s.Pay(context.Background(), "ORD-E2", "buyer1", 1000); !errors.Is(err, errInjected) {
+		t.Fatalf("SaveRecord 失败应向上传播, got %v", err)
+	}
+}
+
+// 通知投递失败只记录告警，不影响受理结果，且按 NotifyCount 重试。
+func TestDispatchNotifyFailureRetries(t *testing.T) {
+	notifier := &fakeNotify{err: errInjected}
+	s := NewService(newFakeChannelRepo(), notifier, "secret", nil)
+	cfg := entity.ChannelConfig{PayBehavior: entity.PayBehaviorSuccess, NotifyCount: 3}
+	// 同步触发投递过程，断言重试次数与告警路径（异步路径由 Pay 系列测试覆盖）。
+	s.dispatchNotify("ORD-E3", 1000, "CH-E3", cfg)
+	if got := len(notifier.snapshot()); got != cfg.NotifyCount {
+		t.Fatalf("重试%d次, 收到%d次", cfg.NotifyCount, got)
+	}
+}
+
+// 仓储支持原子退款时直接走 ExecuteRefund，不再走“计数+判定”路径。
+func TestRefundAtomicFastPath(t *testing.T) {
+	repo := &atomicChannelRepo{fakeChannelRepo: *newFakeChannelRepo()}
+	s := NewService(repo, &fakeNotify{}, "secret", nil)
+	ok, msg, err := s.Refund(context.Background(), "RF-A", "CH-A", 10000, "退款")
+	if err != nil || !ok || msg != "atomic refund RF-A" {
+		t.Fatalf("原子退款快速路径 = (%v, %s, %v)", ok, msg, err)
+	}
+	if repo.calls != 1 {
+		t.Fatalf("ExecuteRefund 调用次数 = %d, want 1", repo.calls)
+	}
+	if records := repo.records; len(records) != 0 {
+		t.Fatalf("快速路径不应写渠道流水, got %d 条", len(records))
+	}
+}
+
+func TestRefundLoadConfigError(t *testing.T) {
+	s := NewService(&errChannelRepo{errLoadConfig: errInjected}, &fakeNotify{}, "secret", nil)
+	if _, _, err := s.Refund(context.Background(), "RF-E1", "CH", 1000, "退款"); !errors.Is(err, errInjected) {
+		t.Fatalf("LoadConfig 失败应向上传播, got %v", err)
+	}
+}
+
+func TestRefundCountAttemptsError(t *testing.T) {
+	s := NewService(&errChannelRepo{errCountAttempts: errInjected}, &fakeNotify{}, "secret", nil)
+	if _, _, err := s.Refund(context.Background(), "RF-E2", "CH", 1000, "退款"); !errors.Is(err, errInjected) {
+		t.Fatalf("CountRefundAttempts 失败应向上传播, got %v", err)
+	}
+}
+
+func TestRefundSaveRecordError(t *testing.T) {
+	s := NewService(&errChannelRepo{errSaveRecord: errInjected}, &fakeNotify{}, "secret", nil)
+	if _, _, err := s.Refund(context.Background(), "RF-E3", "CH", 1000, "退款"); !errors.Is(err, errInjected) {
+		t.Fatalf("SaveRecord 失败应向上传播, got %v", err)
+	}
+}
+
+func TestGetConfigError(t *testing.T) {
+	s := NewService(&errChannelRepo{errLoadConfig: errInjected}, &fakeNotify{}, "secret", nil)
+	if _, err := s.GetConfig(context.Background()); !errors.Is(err, errInjected) {
+		t.Fatalf("GetConfig 错误应向上传播, got %v", err)
+	}
+}
+
+func TestListRecords(t *testing.T) {
+	repo := newFakeChannelRepo()
+	s := NewService(repo, &fakeNotify{}, "secret", nil)
+	_, _ = s.Pay(context.Background(), "ORD-L1", "buyer1", 1000)
+	records, err := s.ListRecords(context.Background())
+	if err != nil {
+		t.Fatalf("ListRecords: %v", err)
+	}
+	if len(records) == 0 {
+		t.Fatal("受理后应有渠道流水")
+	}
+	if records[0].OrderNo != "ORD-L1" || records[0].Result != "success" {
+		t.Fatalf("流水内容 = %+v", records[0])
 	}
 }

@@ -1,15 +1,15 @@
-Acceptance time 2026-11-12T15:32:48.466584+08:00
-Source HEAD f2b20529e3ab908b3b4af61ef2abf0c1f3e98791 plus uncommitted worktree changes (not an exact commit release).
-Built six services. Isolated runtime: C:\Users\35795\AppData\Local\Temp\trade-acceptance-dua2gplp
+Acceptance time 2026-11-13T16:26:13.810953+08:00
+Source HEAD bd1706d5692450915c24a2a8e76d49f3f07d018c plus uncommitted worktree changes (not an exact commit release).
+Built six services. Isolated runtime: /tmp/trade-acceptance-xu1sw0en
 All six services started; six teaching accounts authenticated.
 Seed: exactly two products; three buyers and three staff authenticated. Teaching expiry explicitly shortened to 3 seconds.
-PASS S1: real HTTP create/pay (3 repeated notifications)/ship/buyer tracking/ops stock and records. order=ORD17944688129261e0d4afbef
+PASS S1: real HTTP create/pay (3 repeated notifications)/ship/buyer tracking/ops stock and records. order=ORD1794559496334c4187b0a44
 PASS S2: 20 HTTP requests / 5 successful / 15 rejected; cancel 2 twice, then 2 other purchases; no oversell.
 PASS S3: paid/refund apply/shipping blocked/blank review rejected/first channel refund fails/retry succeeds/5 stock restored.
 PASS S4: timeout before 3 delayed success notifications; exception refunded twice requests, only 1 channel success; stock 5; summary paid=30000/refunded=20000.
 PASS channel branches: explicit FAILED leaves order unpaid; no_notify times out server-side and releases stock.
-PASS S5: simultaneous refund/ship -> SHIPPED; other buyer GET/cancel denied; staff operation and channel auth boundaries denied.
+PASS S5: simultaneous refund/ship -> REFUND_REQUESTED; other buyer GET/cancel denied; staff operation and channel auth boundaries denied.
 All six services started; six teaching accounts authenticated.
 PASS restart: all six processes stopped/restarted against same file; shipment, amounts and product count persisted; no duplicate seeding.
-Runtime logs retained at C:\Users\35795\AppData\Local\Temp\trade-acceptance-dua2gplp
+Runtime logs retained at /tmp/trade-acceptance-xu1sw0en
 RESULT PASS (HTTP integration scope only)

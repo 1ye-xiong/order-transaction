@@ -20,3 +20,9 @@
 2026-11-12 前端源码接入追加：重新读取AGENTS v2、developer入口及trade-business-check v2，按已授权修补范围接入买家/仓库/客服/运营真实接口，复核整数分、服务端身份、异步支付/退款状态。独立测试与验收各自读题运行，证据见docs/remediation/frontend-independent-tests.md、frontend-acceptance.md。发现分页、时区、构建与轮询问题后修正复测；无正式发布或学生人工审核证据，不补写早期历史。
 
 2026-11-12 用户清单再复核：实际重读AGENTS与trade-business-check，开发补关键状态与流水同事务、查询错误传播和库存补偿扫描公平性；测试/验收分别独立上下文复跑最终版本，原始记录在当前聊天及docs/remediation/followup-*。不把旧profile沿用为新代码达标，不把本机旧镜像当成本轮新部署，不补造历史Token、学生审核或视频。
+
+## 2026-11-13 Skill格式整理
+
+任务：按用户提供的student-project-audit/SKILL.md格式整理项目两个Skill。实际读取参考文件、skill-creator、项目AGENTS和原Skill；采用YAML名称描述、标题与版本、输入与边界、编号执行章节及交付自检结构，保留题目01业务与共同要求，不引入参考Skill的评分或Token规则。两个Skill更新为v3.0；本轮是格式编辑，不宣称已执行业务检查或独立验收。
+
+实际使用既有skill-creator（本地版本未暴露），用于规范入口、保留授权边界和校验。标准quick_validate尝试运行，但本机Python缺少PyYAML而未执行成功；改以本地结构与链接检查核对，git diff --check通过。未运行Go测试，未提交或部署。会话及精确模型发行版本未获取；学生尚未逐项审核。两个项目Skill的旧使用记录保持原样，不把v2调用归为v3调用。

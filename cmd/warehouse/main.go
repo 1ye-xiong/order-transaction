@@ -85,14 +85,18 @@ func run(configPath string) error {
 	defer log.Sync()
 	config.PrintSourceNotice(cfg, os.Stdout)
 
-	orderConn, err := grpc.Dial(cfg.ServiceTarget("order"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	orderConn, err := grpc.Dial(cfg.ServiceTarget("order"), grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)), grpcx.ResilientDialOption(grpcx.DefaultInternalCallTimeout),
+		grpc.WithChainUnaryInterceptor(grpcx.UnaryClientAuthInterceptor(cfg.Trade.InternalRPCSecret)))
 	if err != nil {
 		return fmt.Errorf("dial order service failed"+": %w", err)
 	}
 	defer orderConn.Close()
 
 	svc := warehouseservice.NewService(&orderGateway{client: orderv1.NewOrderServiceClient(orderConn)})
-	server := grpc.NewServer(grpc.UnaryInterceptor(grpcx.UnaryServerInterceptor(log)))
+	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		grpcx.UnaryServerAuthInterceptor(cfg.Trade.InternalRPCSecret),
+		grpcx.UnaryServerInterceptor(log)))
 	warehousev1.RegisterWarehouseServiceServer(server, warehousehandler.NewServer(svc))
 
 	port := cfg.ServicePort("warehouse", defaultGRPCPort)

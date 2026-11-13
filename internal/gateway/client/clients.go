@@ -14,6 +14,7 @@ import (
 	userv1 "github.com/BwCloudWeGo/bw-cli/api/gen/user/v1"
 	warehousev1 "github.com/BwCloudWeGo/bw-cli/api/gen/warehouse/v1"
 	"github.com/BwCloudWeGo/bw-cli/pkg/config"
+	"github.com/BwCloudWeGo/bw-cli/pkg/grpcx"
 )
 
 // Clients 聚合 HTTP gateway 使用的所有 gRPC client。
@@ -39,7 +40,9 @@ func New(cfg *config.Config, log *zap.Logger) (*Clients, error) {
 	warehouseTarget := cfg.ServiceTarget("warehouse")
 
 	dial := func(name string, target string) (*grpc.ClientConn, error) {
-		conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.WaitForReady(true)), grpcx.ResilientDialOption(grpcx.DefaultInternalCallTimeout),
+			grpc.WithChainUnaryInterceptor(grpcx.UnaryClientAuthInterceptor(cfg.Trade.InternalRPCSecret)))
 		if err != nil {
 			return nil, fmt.Errorf("dial %s service: %w", name, err)
 		}

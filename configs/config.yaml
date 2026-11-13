@@ -47,6 +47,7 @@ database:
 trade:
   order_pay_timeout_seconds: 600
   pay_notify_secret: "teaching-pay-notify-secret"
+  internal_rpc_secret: "teaching-internal-rpc-secret"
 
 mysql:
   dsn: "root:root@tcp(127.0.0.1:3306)/order?charset=utf8mb4&parseTime=True&loc=Local"

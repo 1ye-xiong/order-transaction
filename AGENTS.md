@@ -57,7 +57,7 @@
 
 ## 7. 角色入口与Skill
 
-按 `docs/agents/README.md` 分别开启三个独立会话，读取本文件、原始题面、通用要求，再读取 developer.md、tester.md 或 acceptor.md。这些是可直接使用的角色指令文件，不代表三个独立会话已运行，也不声称已注册工具专属子Agent。
+三个完整角色文件为 `.agents/developer.agent`、`.agents/tester.agent`、`.agents/acceptor.agent`，按开发 → 测试 → 验收顺序执行，交接规则见 `docs/agents/workflow.md`。按 `docs/agents/README.md` 使用独立上下文，读取本文件、原始题面、通用要求及对应 `.agent` 文件。文件扩展名不代表客户端自动注册，文件存在不代表独立会话已运行或测试验收已通过。
 
 两个项目Skill以 `.agents/skills/trade-business-check/SKILL.md` 与 `.agents/skills/topic01-acceptance-check/SKILL.md` 为唯一维护入口；旧skills路径仅保留指向入口的兼容说明。使用方法、加载和版本记录见 `docs/agents/README.md`、`docs/agent-skill-changes.md` 和根目录 `skill-usage.md`。
 

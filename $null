@@ -1,4 +1,46 @@
-FINDSTR: Cannot open tool
-FINDSTR: Cannot open cover
-FINDSTR: Cannot open -func=coverage-core.out
-cover: open coverage.out: The system cannot find the file specified.
+mode: set
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:48.2,48.16 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:49.3,50.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:51.2,51.75 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:56.2,60.1 4 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:64.2,66.1 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:70.2,71.16 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:72.3,73.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:74.2,75.16 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:76.3,77.1 1 0
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:79.2,86.1 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:87.2,87.55 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:88.3,89.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:91.2,91.54 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:92.3,94.1 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:96.2,97.21 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:102.2,104.1 4 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:105.2,106.50 4 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:107.3,108.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:109.2,109.42 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:110.3,119.1 4 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:120.3,120.64 4 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:121.4,127.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:128.4,134.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:135.3,135.11 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:141.2,143.9 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:144.3,145.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:146.2,147.16 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:148.3,149.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:150.2,151.16 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:152.3,153.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:154.2,156.1 5 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:157.2,159.13 5 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:160.3,162.1 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:164.2,173.1 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:174.2,174.55 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:175.3,176.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:177.2,177.30 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:181.2,182.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:185.2,186.16 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:187.3,188.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:189.2,190.20 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:194.2,195.1 1 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:198.2,199.42 2 1
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:200.3,201.1 1 0
+github.com/BwCloudWeGo/bw-cli/internal/payment/service/service.go:202.2,202.96 1 1

@@ -1,6 +1,8 @@
 # 题目01 Agent与Skill使用方式
 
-本项目以根AGENTS.md为共同约束，三个角色文件是独立会话启动指令。不是注册了三个正在运行的Agent，也不代替真实独立会话。实际任务不要求同时执行，不应共享一个会话扮演三种角色签发合格结论。
+本项目以根AGENTS.md为共同约束，三个完整角色文件为 `.agents/developer.agent`（开发）、`.agents/tester.agent`（测试）、`.agents/acceptor.agent`（验收）。这是实际的 `.agent` 文本文件，不是 TOML 配置，也不声称客户端自动注册。角色文件不代表Agent已运行；不应共享一个会话扮演三种角色签发合格结论。
+
+执行顺序固定为 **开发 → 测试 → 验收**，交接和失败退回规则、启动示例见 [workflow.md](workflow.md)。分别在独立会话中读取对应 `.agent` 文件。
 
 ## 原始来源
 题面：`C:/Users/35795/Desktop/Go项目业务场景题.md`，读取全部通用要求和题目01。
@@ -8,9 +10,11 @@
 这些绝对路径仅适用于当前机器；迁移时由用户提供原始来源或经确认的副本，不把本项目摘要当作原题替代品。
 
 ## 启动三个角色
-开发新会话：打开本项目，读取AGENTS.md和docs/agents/developer.md，指定真实工作项、当前任务和版本，按其交接要求执行。
-测试另开会话：读取AGENTS.md和docs/agents/tester.md，提供原题与明确代码快照，独立执行测试，不只读取开发总结。
-验收再次另开会话：读取AGENTS.md和docs/agents/acceptor.md，提供最终代码和全部测试及发布证据，阶段结论不能当整题结论。
+开发新会话：打开本项目，读取AGENTS.md和.agents/developer.agent，指定真实工作项、当前任务和版本，按其交接要求执行。
+测试另开会话：读取AGENTS.md和.agents/tester.agent，提供原题与明确代码快照，独立执行测试，不只读取开发总结。
+验收再次另开会话：读取AGENTS.md和.agents/acceptor.agent，提供最终代码和全部测试及发布证据，阶段结论不能当整题结论。
+
+原有 developer.md、tester.md、acceptor.md 仅保留为旧路径导航；完整角色指令以 `.agent` 文件为维护入口。
 
 ## 两个Skill
 标准项目目录为`.agents/skills/<name>/SKILL.md`。工具支持项目级Skill发现时重新打开项目或会话，再选择对应Skill；不支持时显式要求读取该SKILL.md并按步骤执行。工具未发现时不能声称自动安装成功。本次没有改全局配置。
